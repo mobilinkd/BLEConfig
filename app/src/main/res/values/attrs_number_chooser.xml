@@ -1,0 +1,8 @@
+<resources>
+    <declare-styleable name="NumberChooser">
+        <attr name="android:layout_height" format="dimension" />
+        <attr name="chooserValue" format="integer" />
+        <attr name="chooserMinimum" format="integer" />
+        <attr name="chooserMaximum" format="integer" />
+    </declare-styleable>
+</resources>

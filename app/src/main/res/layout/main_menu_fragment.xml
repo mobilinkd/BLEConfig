@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainMenuFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/receive_audio_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/receive_audio_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/microphone_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/transmit_audio_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/transmit_audio_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/speaker_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/receive_audio_button" />
+
+        <Button
+            android:id="@+id/power_settings_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/power_settings_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/power_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/transmit_audio_button" />
+
+        <Button
+            android:id="@+id/kiss_parameters_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/kiss_parameters_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/network_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/power_settings_button" />
+
+        <Button
+            android:id="@+id/modem_configuration_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/modem_configuration_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/gear_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/kiss_parameters_button" />
+
+        <Button
+            android:id="@+id/tnc_information_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/tnc_information_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/info_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/modem_configuration_button" />
+
+        <Button
+            android:id="@+id/save_settings_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha=".75"
+            android:gravity="start|center_vertical"
+            android:text="@string/save_settings_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            app:icon="@drawable/save_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tnc_information_button" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>

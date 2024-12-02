@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/SelectDeviceFragment">
+
+    <fragment
+        android:id="@+id/SelectDeviceFragment"
+        android:name="com.mobilinkd.bleconfig.SelectDeviceFragment"
+        android:label="@string/select_device_fragment_label"
+        tools:layout="@layout/select_device_fragment">
+        <action
+            android:id="@+id/action_SelectDeviceFragment_to_ConnectingFragment"
+            app:destination="@id/ConnectingFragment"
+            app:enterAnim="@anim/nav_default_enter_anim" />
+    </fragment>
+    <fragment
+        android:id="@+id/MainMenuFragment"
+        android:name="com.mobilinkd.bleconfig.MainMenuFragment"
+        android:label="@string/main_menu_fragment_label"
+        tools:layout="@layout/main_menu_fragment">
+        <action
+            android:id="@+id/action_MainMenuFragment_to_SelectDeviceFragment2"
+            app:destination="@id/SelectDeviceFragment"
+            app:popUpTo="@id/SelectDeviceFragment" />
+        <action
+            android:id="@+id/action_MainMenuFragment_to_ReceiveAudioFragment"
+            app:destination="@id/ReceiveAudioFragment" />
+        <action
+            android:id="@+id/action_MainMenuFragment_to_transmitAudioFragment"
+            app:destination="@id/transmitAudioFragment" />
+        <action
+            android:id="@+id/action_MainMenuFragment_to_powerSettingsFragment"
+            app:destination="@id/powerSettingsFragment" />
+        <action
+            android:id="@+id/action_MainMenuFragment_to_kissParametersFragment"
+            app:destination="@id/kissParametersFragment" />
+        <action
+            android:id="@+id/action_MainMenuFragment_to_modemConfigurationFragment"
+            app:destination="@id/modemConfigurationFragment" />
+        <action
+            android:id="@+id/action_MainMenuFragment_to_tncInformationFragment"
+            app:destination="@id/tncInformationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/ConnectingFragment"
+        android:name="com.mobilinkd.bleconfig.ConnectingFragment"
+        android:label="fragment_connecting"
+        tools:layout="@layout/connecting_fragment" >
+        <argument
+            android:name="device"
+            app:argType="android.bluetooth.BluetoothDevice" />
+        <action
+            android:id="@+id/action_ConnectingFragment_to_MainMenuFragment"
+            app:destination="@id/MainMenuFragment"
+            app:popUpTo="@id/SelectDeviceFragment" />
+    </fragment>
+    <action
+        android:id="@+id/action_global_SelectDeviceFragment"
+        app:destination="@id/SelectDeviceFragment" />
+    <action
+        android:id="@+id/action_global_ConnectingFragment"
+        app:destination="@id/ConnectingFragment" />
+    <fragment
+        android:id="@+id/ReceiveAudioFragment"
+        android:name="com.mobilinkd.bleconfig.ReceiveAudioFragment"
+        android:label="fragment_receive_audio"
+        tools:layout="@layout/receive_audio_fragment" />
+    <fragment
+        android:id="@+id/transmitAudioFragment"
+        android:name="com.mobilinkd.bleconfig.TransmitAudioFragment"
+        android:label="transmit_audio_fragment"
+        tools:layout="@layout/transmit_audio_fragment" />
+    <fragment
+        android:id="@+id/powerSettingsFragment"
+        android:name="com.mobilinkd.bleconfig.PowerSettingsFragment"
+        android:label="power_settings_fragment"
+        tools:layout="@layout/power_settings_fragment" />
+    <fragment
+        android:id="@+id/kissParametersFragment"
+        android:name="com.mobilinkd.bleconfig.KissParametersFragment"
+        android:label="kiss_parameters_fragment"
+        tools:layout="@layout/kiss_parameters_fragment" />
+    <fragment
+        android:id="@+id/modemConfigurationFragment"
+        android:name="com.mobilinkd.bleconfig.ModemConfigurationFragment"
+        android:label="modem_configuration_fragment"
+        tools:layout="@layout/modem_configuration_fragment" />
+    <fragment
+        android:id="@+id/tncInformationFragment"
+        android:name="com.mobilinkd.bleconfig.TncInformationFragment"
+        android:label="tnc_information_fragment"
+        tools:layout="@layout/tnc_information_fragment" />
+</navigation>

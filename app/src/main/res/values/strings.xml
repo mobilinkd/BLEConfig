@@ -1,0 +1,173 @@
+<resources>
+    <string name="app_name">BLE Config</string>
+    <string name="full_app_name">Mobilinkd BLE Configuration</string>
+    <string name="version_name">Version %1$s</string>
+    <string name="logo_description">Mobilinkd logo</string>
+
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="select_device_fragment_label">Connect</string>
+    <string name="main_menu_fragment_label">Configure</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+    <string name="bt_not_enabled">Cannot be used when Bluetooth is disabled.</string>
+    <string name="bt_perms_needed">Bluetooth permissions are required.</string>
+    <string name="rssi_dbm">%1$s dBm</string>
+    <string name="configure">Configure</string>
+    <string name="select_tnc">Select TNC</string>
+    <string name="device_label">Device: </string>
+    <string name="connecting_fragment_label">Connecting...</string>
+    <string name="receive_audio_fragment_label">Receive Audio</string>
+    <string name="transmit_audio_fragment_label">Transmit Audio</string>
+    <string name="kiss_fragment_label">KISS Parameters</string>
+    <string name="power_fragment_label">Power Settings</string>
+    <string name="modem_fragment_label">Modem Configuration</string>
+    <string name="info_fragment_label">TNC Information</string>
+    <string name="receive_audio_button_text">Receive Audio...</string>
+    <string name="transmit_audio_button_text">Transmit Audio...</string>
+    <string name="power_settings_button_text">Power Settings...</string>
+    <string name="kiss_parameters_text">KISS Parameters...</string>
+    <string name="modem_configuration_button_text">Modem Configuration...</string>
+    <string name="tnc_information_button_text">TNC Information...</string>
+    <string name="save_settings_button_text">Save Settings</string>
+    <string name="input_gain_label">Input Gain</string>
+    <string name="receive_audio_level_label">Receive Audio Level</string>
+    <string name="receive_audio_level_help">Open the squelch on the radio and adjust the volume level so the bare intermittently touches the right side.</string>
+    <string name="input_twist_label">Input Twist</string>
+    <string name="input_twist_min">-3dB</string>
+    <string name="input_twist_max">9dB</string>
+    <string name="input_gain_default_value">0</string>
+    <string name="input_gain_min_value">0</string>
+    <string name="input_gain_max_value">4</string>
+    <string name="input_twist_default_value">0dB</string>
+    <string name="input_twist_value">$1%ddB</string>
+    <string name="large_text">
+        "Material is the metaphor.\n\n"
+
+        "A material metaphor is the unifying theory of a rationalized space and a system of motion."
+        "The material is grounded in tactile reality, inspired by the study of paper and ink, yet "
+        "technologically advanced and open to imagination and magic.\n"
+        "Surfaces and edges of the material provide visual cues that are grounded in reality. The "
+        "use of familiar tactile attributes helps users quickly understand affordances. Yet the "
+        "flexibility of the material creates new affordances that supercede those in the physical "
+        "world, without breaking the rules of physics.\n"
+        "The fundamentals of light, surface, and movement are key to conveying how objects move, "
+        "interact, and exist in space and in relation to each other. Realistic lighting shows "
+        "seams, divides space, and indicates moving parts.\n\n"
+
+        "Bold, graphic, intentional.\n\n"
+
+        "The foundational elements of print based design typography, grids, space, scale, color, "
+        "and use of imagery guide visual treatments. These elements do far more than please the "
+        "eye. They create hierarchy, meaning, and focus. Deliberate color choices, edge to edge "
+        "imagery, large scale typography, and intentional white space create a bold and graphic "
+        "interface that immerse the user in the experience.\n"
+        "An emphasis on user actions makes core functionality immediately apparent and provides "
+        "waypoints for the user.\n\n"
+
+        "Motion provides meaning.\n\n"
+
+        "Motion respects and reinforces the user as the prime mover. Primary user actions are "
+        "inflection points that initiate motion, transforming the whole design.\n"
+        "All action takes place in a single environment. Objects are presented to the user without "
+        "breaking the continuity of experience even as they transform and reorganize.\n"
+        "Motion is meaningful and appropriate, serving to focus attention and maintain continuity. "
+        "Feedback is subtle yet clear. Transitions are efﬁcient yet coherent.\n\n"
+
+        "3D world.\n\n"
+
+        "The material environment is a 3D space, which means all objects have x, y, and z "
+        "dimensions. The z-axis is perpendicularly aligned to the plane of the display, with the "
+        "positive z-axis extending towards the viewer. Every sheet of material occupies a single "
+        "position along the z-axis and has a standard 1dp thickness.\n"
+        "On the web, the z-axis is used for layering and not for perspective. The 3D world is "
+        "emulated by manipulating the y-axis.\n\n"
+
+        "Light and shadow.\n\n"
+
+        "Within the material environment, virtual lights illuminate the scene. Key lights create "
+        "directional shadows, while ambient light creates soft shadows from all angles.\n"
+        "Shadows in the material environment are cast by these two light sources. In Android "
+        "development, shadows occur when light sources are blocked by sheets of material at "
+        "various positions along the z-axis. On the web, shadows are depicted by manipulating the "
+        "y-axis only. The following example shows the card with a height of 6dp.\n\n"
+
+        "Resting elevation.\n\n"
+
+        "All material objects, regardless of size, have a resting elevation, or default elevation "
+        "that does not change. If an object changes elevation, it should return to its resting "
+        "elevation as soon as possible.\n\n"
+
+        "Component elevations.\n\n"
+
+        "The resting elevation for a component type is consistent across apps (e.g., FAB elevation "
+        "does not vary from 6dp in one app to 16dp in another app).\n"
+        "Components may have different resting elevations across platforms, depending on the depth "
+        "of the environment (e.g., TV has a greater depth than mobile or desktop).\n\n"
+
+        "Responsive elevation and dynamic elevation offsets.\n\n"
+
+        "Some component types have responsive elevation, meaning they change elevation in response "
+        "to user input (e.g., normal, focused, and pressed) or system events. These elevation "
+        "changes are consistently implemented using dynamic elevation offsets.\n"
+        "Dynamic elevation offsets are the goal elevation that a component moves towards, relative "
+        "to the component’s resting state. They ensure that elevation changes are consistent "
+        "across actions and component types. For example, all components that lift on press have "
+        "the same elevation change relative to their resting elevation.\n"
+        "Once the input event is completed or cancelled, the component will return to its resting "
+        "elevation.\n\n"
+
+        "Avoiding elevation interference.\n\n"
+
+        "Components with responsive elevations may encounter other components as they move between "
+        "their resting elevations and dynamic elevation offsets. Because material cannot pass "
+        "through other material, components avoid interfering with one another any number of ways, "
+        "whether on a per component basis or using the entire app layout.\n"
+        "On a component level, components can move or be removed before they cause interference. "
+        "For example, a floating action button (FAB) can disappear or move off screen before a "
+        "user picks up a card, or it can move if a snackbar appears.\n"
+        "On the layout level, design your app layout to minimize opportunities for interference. "
+        "For example, position the FAB to one side of stream of a cards so the FAB won’t interfere "
+        "when a user tries to pick up one of cards.\n\n"
+    </string>
+    <string name="ptt_style_label">PTT Style</string>
+    <string name="simplex_style_label">Simplex</string>
+    <string name="multiplex_style_label">Multiplex</string>
+    <string name="transmit_gain_label">Transmit Audio Gain</string>
+    <string name="transmit_twist_label">Transmit Audio Twist</string>
+    <string name="transmit_test_label">Transmit Test Tone</string>
+    <string name="transmit_tone_mark_label">1200Hz</string>
+    <string name="transmit_tone_space_label">2200Hz</string>
+    <string name="transmit_tone_both_label">Both</string>
+    <string name="transmit_tone_1khz_label">1000Hz</string>
+    <string name="transmit_tone_2400_label">2400Hz</string>
+    <string name="transmit_tone_bert_label">BERT</string>
+    <string name="transmit_tone_zeros_label">zeros</string>
+    <string name="transmit_tone_ones_label">ones</string>
+    <string name="transmit_button_text">Transmit</string>
+    <string name="tx_delay_label">TX Delay</string>
+    <string name="minus_button_description">Decrement</string>
+    <string name="plus_button_description">Increment</string>
+    <string name="number_chooser_hint">a number</string>
+    <string name="kiss_tx_delay_label">TX Delay</string>
+    <string name="kiss_persistence_label">Persistence</string>
+    <string name="kiss_slot_time_label">Slot Time</string>
+    <string name="kiss_duplex_label">Full Duplex</string>
+    <string name="battery_level_label">Battery Level</string>
+    <string name="battery_level_mv_label">%1$04dmV</string>
+    <string name="usb_power_on_label">Power On with USB Power</string>
+    <string name="usb_power_off_label">Power Off with USB Power</string>
+    <string name="modem_type_label">Modem Type</string>
+    <string name="modem_type_hint">Select the modem type. 1200 baud AFSK is normal for APRS.</string>
+    <string name="pass_all_label">Pass All</string>
+    <string name="pass_all_hint">Allows corrupted packets through. Use for testing only.</string>
+    <string name="receive_polarity_label">Receive Reverse Polarity</string>
+    <string name="receive_polarity_hint">Reverse the polarity of received 4-FSK symbols.</string>
+    <string name="transmit_polarity_label">Transmit Reverse Polarity</string>
+    <string name="transmit_polarity_hint">Reverse the polarity of transmitted 4-FSK symbols.</string>
+    <string name="hardware_version_label">Hardware Version</string>
+    <string name="firmware_version_label">Firmware Version</string>
+    <string name="mac_address_label">Bluetooth Address</string>
+    <string name="serial_number_label">Serial Number</string>
+    <string name="date_time_label">RTC Date/Time (UTC)</string>
+</resources>
