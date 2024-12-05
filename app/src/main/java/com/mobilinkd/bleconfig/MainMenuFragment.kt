@@ -1,20 +1,15 @@
 package com.mobilinkd.bleconfig
 
-import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import com.mobilinkd.bleconfig.databinding.MainMenuFragmentBinding
 
-/**
- * A simple [Fragment] subclass as the second destination in the navigation.
- */
 class MainMenuFragment : Fragment() {
 
     private var _binding: MainMenuFragmentBinding? = null
@@ -59,10 +54,6 @@ class MainMenuFragment : Fragment() {
         binding.tncInformationButton.setOnClickListener {
             findNavController().navigate(R.id.action_MainMenuFragment_to_tncInformationFragment)
         }
-
-//        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(mMessageReceiver,
-//            IntentFilter("custom-event-name")
-//        )
     }
 
     override fun onResume() {
@@ -74,7 +65,11 @@ class MainMenuFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         if (D) Log.d(TAG, "onPause()")
-        (activity as MainActivity).disconnect()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (D) Log.d(TAG, "onStop()")
     }
 
     override fun onDestroyView() {

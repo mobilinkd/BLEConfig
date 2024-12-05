@@ -30,18 +30,28 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <ProgressBar
-            android:id="@+id/battery_level_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="@dimen/text_margin"
-            android:maxHeight="24dp"
-            android:minHeight="24dp"
-            android:scaleY="3"
+        <com.google.android.material.slider.Slider
+            android:id="@+id/battery_level"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/text_margin"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:clickable="false"
+            android:contentDescription="@string/receive_audio_level_label"
+            android:labelFor="@+id/battery_level_mv_label"
+            android:enabled="false"
+            android:stepSize="20.0"
+            android:value="4000.0"
+            android:valueFrom="3200"
+            android:valueTo="4200"
+            app:trackColorActive="#18BF18"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/battery_level_mv_label" />
+            app:layout_constraintTop_toBottomOf="@id/battery_level_mv_label"
+            app:labelBehavior="gone"
+            app:thumbRadius="0dp"
+            app:trackHeight="24dp" />
 
         <TextView
             android:id="@+id/usb_power_on_label"
@@ -59,8 +69,8 @@
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
             android:contentDescription="@string/usb_power_on_label"
-            app:layout_constraintTop_toBottomOf="@id/battery_level_bar"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/battery_level" />
 
         <TextView
             android:id="@+id/usb_power_off_label"

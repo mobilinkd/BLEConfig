@@ -32,12 +32,14 @@
         app:layout_constraintTop_toBottomOf="@id/imageView"
         android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
-    <TextView
-        android:id="@+id/fragmentDescription"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/Theme.BLEConfig.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -51,7 +53,7 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/fragmentDescription">
+        app:layout_constraintTop_toBottomOf="@id/toolbar" >
 
         <TextView
             android:id="@+id/deviceLabel"

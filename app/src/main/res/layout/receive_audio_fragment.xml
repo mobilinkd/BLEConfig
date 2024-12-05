@@ -12,7 +12,7 @@
         android:layout_height="match_parent">
 
         <TextView
-            android:id="@+id/recevie_audio_level_label"
+            android:id="@+id/receive_audio_level_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -22,17 +22,25 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ProgressBar
-            android:id="@+id/progressBar2"
-            style="@android:style/Widget.Material.Light.ProgressBar.Horizontal"
+        <com.google.android.material.slider.Slider
+            android:id="@+id/receive_audio_level"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="@dimen/text_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="@dimen/text_margin"
+            android:clickable="false"
+            android:contentDescription="@string/receive_audio_level_label"
+            android:enabled="false"
+            android:value="7.0"
+            android:valueFrom="0"
+            android:valueTo="8.0"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/recevie_audio_level_label" />
+            app:layout_constraintTop_toBottomOf="@id/receive_audio_level_label"
+            app:labelBehavior="gone"
+            app:thumbRadius="0dp"
+            app:trackHeight="24dp" />
 
         <TextView
             android:id="@+id/audio_input_help_text"
@@ -44,7 +52,7 @@
             android:text="@string/receive_audio_level_help"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/progressBar2" />
+            app:layout_constraintTop_toBottomOf="@id/receive_audio_level" />
 
         <TextView
             android:id="@+id/input_gain_label"
@@ -57,13 +65,20 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/audio_input_help_text" />
 
-        <SeekBar
-            android:id="@+id/input_gain_seekbar"
+        <com.google.android.material.slider.Slider
+            android:id="@+id/input_gain_slider"
+            android:contentDescription="@string/input_gain_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="@dimen/seek_margin"
+            android:layout_marginEnd="@dimen/seek_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
+            android:valueFrom="0.0"
+            android:valueTo="4.0"
+            android:stepSize="1.0"
+            android:value="0.0"
+            app:trackHeight="16dp"
+            app:thumbRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/input_gain_label" />
@@ -76,7 +91,7 @@
             android:layout_marginTop="8dp"
             android:text="@string/input_gain_min_value"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/input_gain_seekbar" />
+            app:layout_constraintTop_toBottomOf="@+id/input_gain_slider" />
 
         <TextView
             android:id="@+id/input_gain_value"
@@ -86,7 +101,7 @@
             android:text="@string/input_gain_default_value"
             app:layout_constraintEnd_toEndOf="@+id/guideline"
             app:layout_constraintStart_toStartOf="@+id/guideline"
-            app:layout_constraintTop_toBottomOf="@+id/input_gain_seekbar" />
+            app:layout_constraintTop_toBottomOf="@+id/input_gain_slider" />
 
         <TextView
             android:id="@+id/input_gain_max_label"
@@ -96,7 +111,7 @@
             android:layout_marginEnd="8dp"
             android:text="@string/input_gain_max_value"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/input_gain_seekbar" />
+            app:layout_constraintTop_toBottomOf="@+id/input_gain_slider" />
 
         <TextView
             android:id="@+id/input_twist_label"
@@ -109,16 +124,21 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/input_gain_min_label" />
 
-        <SeekBar
+        <com.google.android.material.slider.RangeSlider
             android:id="@+id/input_twist_seekbar"
             style="@style/Widget.AppCompat.SeekBar.Discrete"
+            android:contentDescription="@string/input_twist_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="@dimen/seek_margin"
+            android:layout_marginEnd="@dimen/seek_margin"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:max="13"
-            android:progress="4"
+            android:valueFrom="-4.0"
+            android:valueTo="9.0"
+            android:stepSize="1.0"
+            android:value="0.0"
+            app:trackHeight="16dp"
+            app:thumbRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/input_twist_label" />

@@ -43,21 +43,40 @@ class ConnectingFragment : Fragment(R.layout.connecting_fragment) {
 
         override fun onFailure( msg: String) {
             isConnected = false
+            if (this@ConnectingFragment.isAdded) findNavController().popBackStack(R.id.SelectDeviceFragment, false)
         }
 
         override fun onDisconnect() {
             isConnected = false
+            if (this@ConnectingFragment.isAdded) findNavController().popBackStack(R.id.SelectDeviceFragment, false)
         }
     }
 
     override fun onResume() {
         if (D) Log.d(TAG, "onResume()")
         super.onResume()
-        device?.let {
-            (activity as MainActivity).setAlpha(0.05f)
-            (activity as MainActivity).setFragmentDescription(R.string.connecting_fragment_label)
+        (activity as MainActivity).setAlpha(0.1f)
+        (activity as MainActivity).setFragmentDescription(R.string.connecting_fragment_label)
+        if (device != null) {
             if (!isConnected) {
-                isConnected = (activity as MainActivity).connect(it, connectionCallback)
+                Log.i(TAG, "Connecting to ${device!!.address}")
+                isConnected = (activity as MainActivity).connect(device!!, connectionCallback)
+                if (!isConnected) {
+                    findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+                }
+            } else {
+                Log.i(TAG, "Already connected to ${device!!.address}?!?")
+            }
+        }  else {
+            if (!isConnected) {
+                Log.i(TAG, "Reconnecting")
+                isConnected = (activity as MainActivity).reconnect(connectionCallback)
+                if (!isConnected) {
+                    findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+                }
+            } else {
+                Log.i(TAG, "Already connected?!?")
+                findNavController().popBackStack(R.id.SelectDeviceFragment, false)
             }
         }
     }

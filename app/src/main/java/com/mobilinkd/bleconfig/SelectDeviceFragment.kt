@@ -2,6 +2,7 @@ package com.mobilinkd.bleconfig
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.ActionBar
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -21,12 +22,16 @@ import android.os.Looper
 import android.os.ParcelUuid
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat.invalidateOptionsMenu
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -62,10 +67,36 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
     private lateinit var bluetoothAdapter : BluetoothAdapter
     private lateinit var bluetoothLeScanner : BluetoothLeScanner
     private lateinit var leDeviceListAdapter: LeDeviceListAdapter
+    private var actionBar: ActionBar? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.rescan_menu, menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu){
+        super.onPrepareOptionsMenu(menu)
+        val item = menu.findItem(R.id.rescan_menu_option)
+        item.isVisible = !scanning
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.rescan_menu_option -> {
+                scanForTNCs()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -109,7 +140,8 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         Log.d(TAG, "onResume() ->  ${this@SelectDeviceFragment.activity?.intent?.action}")
         (activity as MainActivity).setAlpha(1.0f)
         (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_label)
-        (activity as MainActivity).disconnect()
+        (activity as MainActivity).close()
+        actionBar = activity?.getActionBar()
         scanForTNCs()
     }
 
@@ -185,9 +217,15 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
 
     // Device scan callback.
     private val leScanCallback: ScanCallback = object : ScanCallback() {
+        @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             if (D) Log.d(TAG, "BLE device found: ${result.device.address}")
             super.onScanResult(callbackType, result)
+            // Only show bonded devices.
+            if (result.device.bondState != BluetoothDevice.BOND_BONDED) {
+                if (D) Log.d(TAG, "Ignoring ${result.device.address}; not bonded")
+                return
+            }
             if (leDeviceListAdapter.size() == 0) {
                 (activity as MainActivity).setAlpha(0.25f)
             }
@@ -201,6 +239,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         if (scanning) {
             scanning = false
             bluetoothLeScanner.stopScan(leScanCallback)
+            requireActivity().invalidateOptionsMenu()
             if (D) Log.d(TAG, "BLE scanning stopped")
         }
     }
@@ -216,6 +255,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
             val scanSettings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             bluetoothLeScanner.startScan(mutableListOf(scanFilter), scanSettings, leScanCallback)
             if (D) Log.d(TAG, "BLE scanning started")
+            requireActivity().invalidateOptionsMenu()
         }
     }
 

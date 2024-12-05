@@ -35,19 +35,19 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/simplex_chip"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="@string/simplex_style_label"
+                style="@style/Widget.BLEConfig.Chip.Choice"
                 app:chipCornerRadius="4dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/multiplex_chip"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/multiplex_style_label"
+                style="@style/Widget.BLEConfig.Chip.Choice"
                 app:chipCornerRadius="4dp" />
         </com.google.android.material.chip.ChipGroup>
 
@@ -61,12 +61,21 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ptt_style_switch" />
 
-        <SeekBar
-            android:id="@+id/transmit_gain_seekbar"
+        <com.google.android.material.slider.Slider
+            android:id="@+id/transmit_gain_slider"
+            android:contentDescription="@string/transmit_gain_label"
+            android:labelFor="@id/transmit_gain"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/seek_margin"
-            android:max="255"
+            android:layout_marginStart="@dimen/seek_margin"
+            android:layout_marginEnd="@dimen/seek_margin"
+            android:layout_marginTop="8dp"
+            android:valueFrom="0.0"
+            android:valueTo="255.0"
+            android:stepSize="1.0"
+            android:value="63.0"
+            app:trackHeight="16dp"
+            app:thumbRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/transmit_gain_label" />
@@ -80,7 +89,7 @@
             android:text="0"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/transmit_gain_seekbar" />
+            app:layout_constraintTop_toBottomOf="@id/transmit_gain_slider" />
 
         <EditText
             android:id="@+id/transmit_gain"
@@ -118,12 +127,21 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/transmit_gain_min" />
 
-        <SeekBar
-            android:id="@+id/transmit_twist_seekbar"
+        <com.google.android.material.slider.Slider
+            android:id="@+id/transmit_twist_slider"
+            android:contentDescription="@string/transmit_twist_label"
+            android:labelFor="@id/transmit_twist"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/seek_margin"
-            android:max="100"
+            android:layout_marginStart="@dimen/seek_margin"
+            android:layout_marginEnd="@dimen/seek_margin"
+            android:layout_marginTop="8dp"
+            android:valueFrom="0.0"
+            android:valueTo="100.0"
+            android:stepSize="1.0"
+            android:value="50.0"
+            app:trackHeight="16dp"
+            app:thumbRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/transmit_twist_label" />
@@ -136,7 +154,7 @@
             android:text="0"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/transmit_twist_seekbar" />
+            app:layout_constraintTop_toBottomOf="@id/transmit_twist_slider" />
 
         <EditText
             android:id="@+id/transmit_twist"
@@ -188,7 +206,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/mark_chip"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
+                style="@style/Widget.BLEConfig.Chip.Choice"
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:checked="true"
@@ -198,7 +216,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/space_chip"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
+                style="@style/Widget.BLEConfig.Chip.Choice"
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:text="@string/transmit_tone_space_label"
@@ -207,7 +225,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/both_chip"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
+                style="@style/Widget.BLEConfig.Chip.Choice"
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:text="@string/transmit_tone_both_label"
@@ -222,6 +240,7 @@
             android:layout_margin="@dimen/text_margin"
             android:clickable="false"
             android:text="@string/transmit_button_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:cornerRadius="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

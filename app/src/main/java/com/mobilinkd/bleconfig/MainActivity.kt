@@ -3,7 +3,9 @@ package com.mobilinkd.bleconfig
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -14,6 +16,8 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -21,9 +25,12 @@ import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
-import androidx.core.os.bundleOf
+import androidx.navigation.Navigation.findNavController
 import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.setupWithNavController
 import com.mobilinkd.bleconfig.databinding.ActivityMainBinding
 
 
@@ -36,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private var bleDevice: BluetoothDevice? = null
     private var _tncProtocolDecoder: TncProtocolDecoder? = null
     private var _connectionCallback: ConnectionCallback? = null
+    private var reconnectOnResume = false
 
     interface ConnectionCallback {
         fun onConnect()
@@ -50,6 +58,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         val applicationVersion: TextView = findViewById(R.id.application_version)
         applicationVersion.text = getString(R.string.version_name, BuildConfig.VERSION_NAME)
+
+        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        val appBarConfiguration = AppBarConfiguration(navController.graph)
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        toolbar.setupWithNavController(navController, appBarConfiguration)
+        setSupportActionBar(findViewById(R.id.toolbar))
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        return super.onCreateOptionsMenu(menu)
     }
 
     override fun onStart() {
@@ -63,17 +81,26 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (D) Log.d(TAG, "BLEService already bound")
         }
-        bleDevice?.let { device ->
-            if (!findNavController(R.id.nav_host_fragment_content_main).popBackStack(R.id.ConnectingFragment, false)) {
-                Log.e(TAG, "popBackStack failed")
-                findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.action_global_ConnectingFragment, bundleOf(ARG_DEVICE to device))
-            }
-        }
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
     override fun onResume() {
         super.onResume()
         if (D) Log.d(TAG, "onResume()")
+
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        if (bluetoothManager.adapter == null) {
+            Toast.makeText(this@MainActivity, R.string.no_bt_adapter, Toast.LENGTH_LONG).show()
+            finish()
+        }
 
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -82,13 +109,11 @@ class MainActivity : AppCompatActivity() {
         ) {
             Toast.makeText(this@MainActivity, R.string.bt_perms_needed, Toast.LENGTH_SHORT).show()
             finish()
-        } else {
-            bleDevice?.let {
-                val deviceName: TextView = findViewById(R.id.deviceName)
-                deviceName.text = it.name
-                val deviceGroup: View = findViewById(R.id.deviceGroup)
-                deviceGroup.visibility = View.VISIBLE
-            }
+        }
+
+        if (reconnectOnResume) {
+            findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.action_global_ConnectingFragment)
+            reconnectOnResume = false
         }
     }
 
@@ -105,13 +130,23 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         if (D) Log.d(TAG, "onStop()")
-        bleService?.close()
+        disconnect()
+        if (bleDevice != null) reconnectOnResume = true
+    }
+
+    override fun onDestroy() {
+        if (D) Log.d(TAG, "onDestroy()")
+        super.onDestroy()
+        bleService?.let {
+            unbindService(bleConnection)
+            bleService = null
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
-//        val navController = findNavController(R.id.nav_host_fragment_content_main)
         if (D) Log.d(TAG, "onSupportNavigateUp()")
-        return super.onSupportNavigateUp()
+        return findNavController(R.id.nav_host_fragment_content_main).navigateUp()
+                || super.onSupportNavigateUp()
     }
 
     private val bleConnection = object : ServiceConnection {
@@ -129,26 +164,47 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     fun setFragmentDescription(@StringRes description: Int) {
-        val view: TextView = findViewById(R.id.fragmentDescription)
-        view.text = getString(description)
+//        val view: TextView = findViewById(R.id.fragmentDescription)
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        toolbar.setTitle(description)
+//        view.text = getString(description)
     }
 
+    @SuppressLint("MissingPermission")
     fun connect(device: BluetoothDevice, callback: ConnectionCallback): Boolean {
         if (D) Log.d(TAG, "connect(device: ${device.address})")
         _connectionCallback = callback
         bleService?.let {
-            if (it.isDisconnected()) {
-                it.open(device)
-                return true
+            if (it.isClosed()) {
+                return it.open(device)
             } else {
-                Log.e(TAG, "Cannot open ${device.name}; not disconnected.")
+                Log.e(TAG, "Cannot open ${device.name}; not closed.")
+            }
+        }
+        return false
+    }
+
+    @SuppressLint("MissingPermission")
+    fun reconnect(callback: ConnectionCallback): Boolean {
+        if (D) Log.d(TAG, "reconnect()")
+        _connectionCallback = callback
+        bleService?.let {
+            if (it.isDisconnected()) {
+                return it.reopen()
+            } else {
+                Log.e(TAG, "Cannot reopen BLE connection; not disconnected.")
             }
         }
         return false
     }
 
     fun disconnect() {
+        bleService?.disconnect()
+    }
+
+    fun close() {
         bleService?.close()
     }
 
@@ -179,6 +235,13 @@ class MainActivity : AppCompatActivity() {
 
                 BluetoothLEService.GATT_DISCONNECTED -> {
                     Log.i(TAG, "GATT disconnected")
+                    val deviceGroup: View = findViewById(R.id.deviceGroup)
+                    deviceGroup.visibility = View.GONE
+                    _connectionCallback?.onDisconnect()
+                }
+
+                BluetoothLEService.GATT_CLOSED -> {
+                    Log.i(TAG, "GATT closed")
                     val deviceGroup: View = findViewById(R.id.deviceGroup)
                     deviceGroup.visibility = View.GONE
                     _connectionCallback?.onDisconnect()
