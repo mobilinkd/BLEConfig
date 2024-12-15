@@ -9,12 +9,15 @@ import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.*
 import java.util.concurrent.Semaphore
+import kotlin.concurrent.schedule
 import kotlin.math.min
 
 
@@ -49,17 +52,22 @@ import kotlin.math.min
 
 // A service that interacts with the BLE device via the Android BLE API.
 class BluetoothLEService : Service() {
-    private lateinit var handler: Handler
     private var device: BluetoothDevice? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var mtu = 20
     private var gatt: BluetoothGatt? = null
     private var retryCount = 0
-    private val inputStream = BLEInputStream()
-    private val outputStream = BLEOutputStream()
+    private val _inputStream = BLEInputStream()
+    private val _outputStream = BLEOutputStream()
     private var receiveThread = ReceiveThread()
     private var connectionState = ConnectionState.CLOSED
+    private var shutdownTimer: Timer? = null
+    private lateinit var serviceHandler: Handler
+    private lateinit var broadcastManager: LocalBroadcastManager
+
+    val inputStream get(): InputStream = _inputStream
+    val outputStream get(): OutputStream = _outputStream
 
     private inner class BLEInputStream: InputStream() {
         private var buffer = ByteArray(0)
@@ -123,17 +131,13 @@ class BluetoothLEService : Service() {
         private var awaitingCallback = Semaphore(1)
 
         override fun write(b: Int) {
-            Log.d(TAG, String.format("write 0x02X", b))
             synchronized(buffer) {
                 buffer += byteArrayOf(b.toByte())
             }
         }
 
-        fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
-
         override fun write(src: ByteArray, offset: Int, length: Int) {
             val data = src.slice(IntRange(offset, offset + length - 1))
-            Log.d(TAG, "write 0x" + data.toByteArray().toHexString())
             synchronized(buffer) {
                 buffer += data
             }
@@ -171,6 +175,13 @@ class BluetoothLEService : Service() {
     private inner class ReceiveThread: Thread("M17 KISS HT BLE Receive Thread") {
         var running = false
 
+        private fun sendData(data: ByteArray) {
+            val intent = Intent(BLE_EVENT)
+            intent.putExtra(BLE_EVENT_ACTION, DATA_RECEIVED)
+            intent.putExtra(BLE_EVENT_DATA, data)
+            broadcastManager.sendBroadcast(intent)
+        }
+
         override fun run() {
             running = true
             Log.d(TAG, "ReceiveThread.run()")
@@ -179,8 +190,8 @@ class BluetoothLEService : Service() {
                 try {
                     val buffer = ByteArray(512)
                     while (running) {
-                        val size = inputStream.read(buffer, 0, buffer.size)
-                        handler.obtainMessage(DATA_RECEIVED, buffer.take(size).toByteArray()).sendToTarget()
+                        val size = _inputStream.read(buffer, 0, buffer.size)
+                        sendData(buffer.take(size).toByteArray())
                         Log.d(TAG, "received $size bytes")
                     }
                 } catch (e : Exception) {
@@ -197,20 +208,29 @@ class BluetoothLEService : Service() {
         }
     }
 
-    override fun onDestroy() {
-        if (D) Log.d(TAG, "onDestroy()")
-        super.onDestroy()
-        gatt?.close()
-        gatt = null
-        device = null
+    fun onConnected(gatt: BluetoothGatt) {
+        synchronized(connectionState) {
+            connectionState = ConnectionState.CONNECTED
+        }
+        val intent = Intent(BLE_EVENT)
+        intent.putExtra(BLE_EVENT_ACTION, GATT_CONNECTED)
+        intent.putExtra(BLE_EVENT_DEVICE, gatt.device)
+        broadcastManager.sendBroadcast(intent)
+    }
+
+    private fun setDisconnectedState() {
+        synchronized(connectionState) {
+            connectionState = ConnectionState.DISCONNECTED
+        }
     }
 
     fun onDisconnected(gatt: BluetoothGatt) {
         if (D) Log.d(TAG,"onDisconnected: device = ${gatt.device.name}")
-        synchronized(connectionState) {
-            connectionState = ConnectionState.DISCONNECTED
-            handler.obtainMessage(GATT_DISCONNECTED, BluetoothGatt.GATT_SUCCESS).sendToTarget()
-        }
+        setDisconnectedState()
+        val intent = Intent(BLE_EVENT)
+        intent.putExtra(BLE_EVENT_ACTION, GATT_DISCONNECTED)
+        broadcastManager.sendBroadcast(intent)
+
     }
 
     fun connect(device: BluetoothDevice, paired: Boolean = false): Boolean {
@@ -251,12 +271,20 @@ class BluetoothLEService : Service() {
 
     fun connectionFailed(msg: String) {
         // It is the responsibility of the message recipient to close the connection.
-        handler.obtainMessage(GATT_CONNECTION_FAILED, msg).sendToTarget()
+        setDisconnectedState()
+        val intent = Intent(BLE_EVENT)
+        intent.putExtra(BLE_EVENT_ACTION, GATT_CONNECTION_FAILED)
+        intent.putExtra(BLE_EVENT_MESSAGE, msg)
+        broadcastManager.sendBroadcast(intent)
     }
 
     fun discoveryFailed(msg: String) {
         // It is the responsibility of the message recipient to close the connection.
-        handler.obtainMessage(GATT_DISCOVERY_FAILED, msg).sendToTarget()
+        setDisconnectedState()
+        val intent = Intent(BLE_EVENT)
+        intent.putExtra(BLE_EVENT_ACTION, GATT_DISCOVERY_FAILED)
+        intent.putExtra(BLE_EVENT_MESSAGE, msg)
+        broadcastManager.sendBroadcast(intent)
     }
 
     // Various callback methods defined by the BLE API.
@@ -271,16 +299,12 @@ class BluetoothLEService : Service() {
                 BluetoothProfile.STATE_CONNECTED -> {
                     Log.i(TAG, "Connected to ${gatt.device.name}.")
                     this@BluetoothLEService.gatt = gatt
-                    if (connectionState == ConnectionState.DISCONNECTING) {
-                        handler.post {gatt.disconnect()}
-                    } else {
-                        gatt.discoverServices()
-                    }
+                    gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     when (status) {
                         BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION -> {
-                            if (connectionState != ConnectionState.DISCOVERED) {
+                            if ((connectionState == ConnectionState.CONNECTING) || (connectionState == ConnectionState.RETRYING)) {
                                 Log.w(TAG, "Discovery failed. connectionState = $connectionState")
                                 if (retryCount > 0) {
                                     synchronized(connectionState) {
@@ -295,7 +319,6 @@ class BluetoothLEService : Service() {
                                 // device must be cleared or discovery will never succeed.
                                 // Probably should abort and tell user to enable/disable Bluetooth.
                                 discoveryFailed("Discovery failed")
-                                onDisconnected(gatt)
                                 return
                             }
                             this@BluetoothLEService.gatt = null
@@ -304,25 +327,17 @@ class BluetoothLEService : Service() {
                                 synchronized(connectionState) {
                                     connectionState = ConnectionState.RETRYING
                                 }
-                                gatt.close()
-                                connect(device!!)
+//                                gatt.close()
+//                                connect(device!!)
+                                gatt.connect()
                                 retryCount = 0
                             } else {
-                                if (connectionState != ConnectionState.DISCOVERED) {
-                                    Log.e(TAG, "Discovery failed")
-                                    discoveryFailed("Discovery failed")
-                                    onDisconnected(gatt)
-                                    return
-                                } else {
-                                    Log.e(TAG, "Authorization failed")
-                                    connectionFailed("Authorization error")
-                                    onDisconnected(gatt)
-                                }
+                                Log.e(TAG, "Authorization failed")
+                                connectionFailed("Authorization error")
                             }
                         }
                         147 -> { // GATT_CONNECTION_TIMEOUT -- New in API level 35
                             connectionFailed("Connection timed out")
-                            onDisconnected(gatt)
                         }
                         else -> {
                             Log.i(TAG, "GATT disconnected from ${gatt.device.name}")
@@ -341,7 +356,6 @@ class BluetoothLEService : Service() {
                 if (service == null) {
                     Log.w(TAG, "KISS TNC Service not found")
                     discoveryFailed("KISS TNC Service not found")
-                    gatt.disconnect()
                 } else {
                     Log.d(TAG, "KISS TNC Service found")
 
@@ -361,6 +375,8 @@ class BluetoothLEService : Service() {
                         Log.e(TAG, "Could not enable notification")
                         return
                     }
+
+                    if (D) Log.d(TAG, "Writing descriptor to enable notification")
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         gatt.writeDescriptor(
@@ -386,16 +402,14 @@ class BluetoothLEService : Service() {
             } else {
                 // Should result in a disconnect...
                 Log.w(TAG,"Descriptor write failed, status = $status")
+                connectionFailed("Descriptor write failed")
             }
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
             if (D) Log.i(TAG, "MTU changed to $mtu")
             this@BluetoothLEService.mtu = mtu - 3
-            synchronized(connectionState) {
-                connectionState = ConnectionState.CONNECTED
-            }
-            handler.obtainMessage(GATT_CONNECTED, gatt.device).sendToTarget()
+            onConnected(gatt)
         }
 
         @TargetApi(Build.VERSION_CODES.S_V2)
@@ -406,7 +420,7 @@ class BluetoothLEService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return // handled below
 
             if (D) Log.d(TAG, "onCharacteristicChanged()")
-            inputStream.receive(characteristic.value)
+            _inputStream.receive(characteristic.value)
         }
 
         @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
@@ -417,7 +431,7 @@ class BluetoothLEService : Service() {
         ) {
             super.onCharacteristicChanged(gatt, characteristic, value)
             if (D) Log.d(TAG, "onCharacteristicChanged()")
-            inputStream.receive(value)
+            _inputStream.receive(value)
         }
 
         override fun onCharacteristicWrite(
@@ -429,13 +443,15 @@ class BluetoothLEService : Service() {
                 Log.w("onCharacteristicWrite", "Failed write, retrying: $status")
             } else {
                 if (D) Log.d(TAG, "onCharacteristicWrite: GATT_SUCCESS")
-                outputStream.sendMore()
+                _outputStream.sendMore()
             }
         }
     }
 
     private fun send(data: ByteArray) : Boolean
     {
+        if (D) Log.d(TAG, "send(${data.toHexString()})")
+
         return if (txCharacteristic != null && gatt!= null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 txCharacteristic
@@ -466,8 +482,8 @@ class BluetoothLEService : Service() {
     }
 
     fun write(data: ByteArray) {
-        outputStream.write(data)
-        outputStream.flush()
+        _outputStream.write(data)
+        _outputStream.flush()
     }
 
     private fun connectInternal(device: BluetoothDevice, doRefresh: Boolean = false): Boolean {
@@ -503,16 +519,17 @@ class BluetoothLEService : Service() {
         }
 
         synchronized(connectionState) {
-            if (connectionState == ConnectionState.CLOSED) {
-                Log.e(TAG, "Cannot reopen when closed")
+            if (connectionState != ConnectionState.DISCONNECTED) {
+                Log.e(TAG, "Cannot reopen when not disconnected")
+                Log.e(TAG, "Cannot reopen when not disconnected")
                 return false
             }
 
             gatt?.let {
                 connectionState = ConnectionState.CONNECTING
                 retryCount = 1
-                outputStream.clear()
-                inputStream.clear()
+                _outputStream.clear()
+                _inputStream.clear()
                 return it.connect()
             }
         }
@@ -551,8 +568,8 @@ class BluetoothLEService : Service() {
                 ConnectionState.CLOSED -> {
                     connectionState = ConnectionState.CONNECTING
                     retryCount = 1
-                    outputStream.clear()
-                    inputStream.clear()
+                    _outputStream.clear()
+                    _inputStream.clear()
                     this.device = device
                     return connectInternal(device)
                 }
@@ -589,15 +606,17 @@ class BluetoothLEService : Service() {
         }
     }
 
-    fun close() {
+    fun close(gatt: BluetoothGatt? = this.gatt) {
         if (D) Log.d(TAG, "close()")
         synchronized(connectionState) {
             gatt?.close()
-            gatt = null
+            this.gatt = null
             device = null
             connectionState = ConnectionState.CLOSED
         }
-        handler.obtainMessage(GATT_CLOSED).sendToTarget()
+        val intent = Intent(BLE_EVENT)
+        intent.putExtra(BLE_EVENT_ACTION, GATT_CLOSED)
+        broadcastManager.sendBroadcast(intent)
     }
 
     fun isDisconnected() : Boolean {
@@ -619,38 +638,73 @@ class BluetoothLEService : Service() {
             get() = this@BluetoothLEService
     }
 
-    override fun onBind(intent: Intent?): IBinder {
-        Log.i(TAG, "onBind: ${intent?.action}")
+    override fun onCreate() {
+        if (D) Log.d(TAG, "onCreate()")
+        super.onCreate()
         receiveThread.start()
+        serviceHandler = Handler(Looper.myLooper()!!)
+        broadcastManager = LocalBroadcastManager.getInstance(this)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (D) Log.d(TAG, "onStartCommand(intent: ${intent?.action}, flags: $flags, startId: $startId)")
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder {
+        Log.i(TAG, "onBind()")
         return mBinder
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        // After using a given device, you should make sure that BluetoothGatt.close() is called
-        // such that resources are cleaned up properly.  In this particular example, close() is
-        // invoked when the UI is disconnected from the Service.
-        Log.i(TAG, "onUnbind: ${intent?.action}")
+        Log.i(TAG, "onUnbind()")
+        if (gatt != null) {
+            shutdownTimer = Timer("shutdownTimer", false)
+            shutdownTimer?.schedule(10000) { stopSelf() }
+        } else {
+            stopSelf()
+        }
+        return false
+    }
+
+    override fun onDestroy() {
+        if (D) Log.d(TAG, "onDestroy()")
+        super.onDestroy()
+        gatt?.close()
+        gatt = null
+        device = null
+        receiveThread.shutdown()
+        receiveThread.join(10)
+    }
+
+    override fun stopService(name: Intent?): Boolean {
+        Log.i(TAG, "stopService: ${name?.action}")
         gatt?.close()
         gatt = null
         device = null
         connectionState = ConnectionState.DISCONNECTED
         receiveThread.shutdown()
         receiveThread.join(10)
-
-        stopSelf()
-        return true
+        return super.stopService(name)
     }
 
     private val mBinder: IBinder = LocalBinder()
 
-    fun initialize(handler: Handler) {
+    fun initialize() {
         if (D) Log.d(TAG, "initialize()")
-        this.handler = handler
+         shutdownTimer?.cancel()
+         shutdownTimer = null
+         gatt?.let {
+            // Let the app know about the active connection.
+            onConnected(it)
+        }
     }
 
     companion object {
-        private const val D = true
-        private val TAG = BluetoothLEService::class.java.name
+        private const val D = false
+        private val TAG = BluetoothLEService::class.java.simpleName
+
+        fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
 
         private val TNC_SERVICE_UUID = UUID.fromString("00000001-ba2a-46c9-ae49-01b0961f68bb")
         private val TNC_SERVICE_TX_UUID = UUID.fromString("00000002-ba2a-46c9-ae49-01b0961f68bb")
@@ -665,6 +719,12 @@ class BluetoothLEService : Service() {
         const val GATT_CLOSED = 6
 
         enum class ConnectionState { CLOSED, DISCONNECTED, CONNECTING, RETRYING, DISCOVERED, CONNECTED, DISCONNECTING }
+
+        const val BLE_EVENT = "BLE_EVENT"
+        const val BLE_EVENT_ACTION = "ACTION"
+        const val BLE_EVENT_DEVICE = "DEVICE"
+        const val BLE_EVENT_MESSAGE = "MESSAGE"
+        const val BLE_EVENT_DATA = "DATA"
 
         fun getServiceUUID() : UUID {
             return TNC_SERVICE_UUID

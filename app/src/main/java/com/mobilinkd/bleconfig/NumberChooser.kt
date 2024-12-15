@@ -53,7 +53,13 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
                 if (textView.text.isNotEmpty()) {
                     v = Integer.parseInt(textView.text.toString())
                 }
-                value = v
+                if (v < _minimum) {
+                    _value = _minimum
+                } else if (v > _maximum) {
+                    _value = _maximum
+                } else {
+                    _value = v
+                }
                 if (_value != v) {
                     textView.text = _value.toString()
                 }
@@ -78,13 +84,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
     var value: Int
         get() = _value
         set(value) {
-            if (value < _minimum) {
-                _value = _minimum
-            } else if (value > _maximum) {
-                _value = _maximum
-            } else {
-                _value = value
-            }
+            textView.text = value.toString()
         }
 
     var minimumValue: Int
@@ -157,7 +157,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
     }
 
     companion object {
-        private val TAG = NumberChooser::class.java.name
+        private val TAG = NumberChooser::class.java.simpleName
         private const val D = true
     }
 }

@@ -30,6 +30,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ptt_style_label"
+            app:selectionRequired="true"
             app:singleLine="true"
             app:singleSelection="true">
 
@@ -49,6 +50,7 @@
                 android:text="@string/multiplex_style_label"
                 style="@style/Widget.BLEConfig.Chip.Choice"
                 app:chipCornerRadius="4dp" />
+
         </com.google.android.material.chip.ChipGroup>
 
         <TextView
@@ -61,23 +63,36 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ptt_style_switch" />
 
+        <TextView
+            android:id="@+id/transmit_gain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/text_margin"
+            android:background="@android:drawable/progress_horizontal"
+            android:backgroundTint="@color/info_color"
+            android:backgroundTintMode="src_in"
+            android:gravity="center"
+            android:minEms="3"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/chip_text_color"
+            app:layout_constraintBaseline_toBaselineOf="@id/transmit_gain_label"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <com.google.android.material.slider.Slider
             android:id="@+id/transmit_gain_slider"
             android:contentDescription="@string/transmit_gain_label"
             android:labelFor="@id/transmit_gain"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/seek_margin"
-            android:layout_marginEnd="@dimen/seek_margin"
-            android:layout_marginTop="8dp"
+            android:layout_margin="8dp"
             android:valueFrom="0.0"
             android:valueTo="255.0"
             android:stepSize="1.0"
             android:value="63.0"
             app:trackHeight="16dp"
             app:thumbRadius="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/transmit_gain_max"
+            app:layout_constraintStart_toEndOf="@id/transmit_gain_min"
             app:layout_constraintTop_toBottomOf="@id/transmit_gain_label" />
 
         <TextView
@@ -89,22 +104,7 @@
             android:text="0"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/transmit_gain_slider" />
-
-        <EditText
-            android:id="@+id/transmit_gain"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_margin="@dimen/text_margin"
-            android:gravity="center"
-            android:ems="3"
-            android:inputType="number"
-            android:text="63"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-            app:layout_constraintBaseline_toBaselineOf="@id/transmit_gain_min"
-            app:layout_constraintEnd_toStartOf="@id/transmit_gain_max"
-            app:layout_constraintStart_toEndOf="@id/transmit_gain_min" />
+            app:layout_constraintBottom_toBottomOf="@id/transmit_gain_slider" />
 
         <TextView
             android:id="@+id/transmit_gain_max"
@@ -127,57 +127,58 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/transmit_gain_min" />
 
-        <com.google.android.material.slider.Slider
-            android:id="@+id/transmit_twist_slider"
-            android:contentDescription="@string/transmit_twist_label"
-            android:labelFor="@id/transmit_twist"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/transmit_twist"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/seek_margin"
-            android:layout_marginEnd="@dimen/seek_margin"
-            android:layout_marginTop="8dp"
-            android:valueFrom="0.0"
-            android:valueTo="100.0"
-            android:stepSize="1.0"
-            android:value="50.0"
-            app:trackHeight="16dp"
-            app:thumbRadius="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/transmit_twist_label" />
+            android:layout_margin="@dimen/text_margin"
+            android:background="@android:drawable/progress_horizontal"
+            android:backgroundTint="@color/info_color"
+            android:backgroundTintMode="src_in"
+            android:gravity="center"
+            android:minEms="3"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/chip_text_color"
+            app:layout_constraintBaseline_toBaselineOf="@id/transmit_twist_label"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
             android:id="@+id/transmit_twist_min"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
+            android:gravity="start|center_vertical"
             android:text="0"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/transmit_twist_slider" />
+            app:layout_constraintBottom_toBottomOf="@id/transmit_twist_slider" />
 
-        <EditText
-            android:id="@+id/transmit_twist"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_margin="@dimen/text_margin"
-            android:ems="3"
-            android:inputType="number"
-            android:text="50"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-            app:layout_constraintBaseline_toBaselineOf="@id/transmit_twist_min"
-            app:layout_constraintEnd_toStartOf="@+id/transmit_twist_max"
-            app:layout_constraintStart_toEndOf="@id/transmit_twist_min" />
+        <com.google.android.material.slider.Slider
+            android:id="@+id/transmit_twist_slider"
+            android:contentDescription="@string/transmit_twist_label"
+            android:labelFor="@id/transmit_twist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:valueFrom="0.0"
+            android:valueTo="100.0"
+            android:stepSize="1.0"
+            android:value="50.0"
+            app:trackHeight="16dp"
+            app:thumbRadius="16dp"
+            app:layout_constraintEnd_toStartOf="@id/transmit_twist_max"
+            app:layout_constraintStart_toEndOf="@id/transmit_twist_min"
+            app:layout_constraintTop_toBottomOf="@id/transmit_twist_label" />
 
         <TextView
             android:id="@+id/transmit_twist_max"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
+            android:gravity="end|center_vertical"
             android:text="100"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-            app:layout_constraintBaseline_toBaselineOf="@id/transmit_twist_min"
+            app:layout_constraintBottom_toBottomOf="@id/transmit_twist_slider"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <TextView
@@ -201,6 +202,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/transmit_test_label"
+            app:selectionRequired="true"
             app:singleLine="true"
             app:singleSelection="true">
 
@@ -233,14 +235,17 @@
                 app:chipCornerRadius="4dp" />
         </com.google.android.material.chip.ChipGroup>
 
-        <Button
+        <ToggleButton
             android:id="@+id/transmit_button"
             android:layout_width="160dp"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
-            android:clickable="false"
-            android:text="@string/transmit_button_text"
+            android:backgroundTint="@color/toggle_color"
+            android:backgroundTintMode="src_in"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/chip_text_color"
+            android:textOff="@string/transmit_button_text"
+            android:textOn="@string/transmit_button_text"
             app:cornerRadius="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

@@ -107,7 +107,7 @@ class LeDeviceListAdapter(context: Context) : RecyclerView.Adapter<LeDeviceListA
     }
 
     companion object {
-        private val TAG = LeDeviceListAdapter::class.java.name
+        private val TAG = LeDeviceListAdapter::class.java.simpleName
         private const val D = true
     }
 }

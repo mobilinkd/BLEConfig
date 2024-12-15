@@ -2,6 +2,7 @@
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
     <dimen name="seek_margin">48dp</dimen>
+    <dimen name="button_top_margin">16dp</dimen>
     <dimen name="number_chooser_default_height">48dp</dimen>
     <dimen name="number_chooser_default_ems">5</dimen>
 </resources>

@@ -10,13 +10,28 @@ import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
 import com.mobilinkd.bleconfig.databinding.ConnectingFragmentBinding
 
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-const val ARG_DEVICE = "device"
-
+/**
+ * Fragment for connecting or reconnecting to a device.
+ *
+ * Possibilities on Resume
+ *
+ *  - Arrive via SelectDeviceFragment
+ *    - Try to connect to specified device
+ *  - Arrive via MainMenuFragment
+ *    - Connected -- Close and navigate to SelectDeviceFragment.
+ *    - Disconnected -- Reconnect
+ *  - Arrive via ConnectingFragment
+ *    - Resumed while pairing (wasStopped = false) -- Continue until callback received.
+ *    - Stopped (wasStopped = true) -- Close on stop and navigate to SelectDeviceFragment on resume.
+ *
+ */
 class ConnectingFragment : Fragment(R.layout.connecting_fragment) {
     lateinit var binding: ConnectingFragmentBinding
     private var device: BluetoothDevice? = null
+    private var source = R.id.SelectDeviceFragment
     private var isConnected = false
+    private var isConnecting = false
+    private var wasStopped = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -31,52 +46,100 @@ class ConnectingFragment : Fragment(R.layout.connecting_fragment) {
 
         arguments?.let {
             device = it.getParcelable(ARG_DEVICE) as BluetoothDevice?
+            source = it.getInt(ARG_SOURCE)
         }
-        if (D) Log.d(TAG, "onViewCreated(device = ${device?.address})")
+        if (D) Log.d(TAG, "onViewCreated(device = ${device?.address}, source = ${source}), isConnected = ${isConnected}")
     }
 
-    val connectionCallback = object: MainActivity.ConnectionCallback {
+    private val connectionCallback = object: MainActivity.ConnectionCallback {
         override fun onConnect() {
             if (D) Log.d(TAG, "onDeviceConnected()")
+            isConnected = true
+            isConnecting = false
+            wasStopped = false
+            arguments?.putInt(ARG_SOURCE, R.id.MainMenuFragment)
             if (this@ConnectingFragment.isAdded) findNavController().navigate(R.id.action_ConnectingFragment_to_MainMenuFragment)
         }
 
         override fun onFailure( msg: String) {
-            isConnected = false
-            if (this@ConnectingFragment.isAdded) findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+            if (isConnecting) {
+                isConnected = false
+                isConnecting = false
+                wasStopped = false
+                arguments?.putInt(ARG_SOURCE, R.id.SelectDeviceFragment)
+                if (this@ConnectingFragment.isAdded) findNavController().popBackStack(
+                    R.id.SelectDeviceFragment,
+                    false)
+            }
         }
 
         override fun onDisconnect() {
-            isConnected = false
-            if (this@ConnectingFragment.isAdded) findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+            if (isConnecting) {
+                isConnected = false
+                isConnecting = false
+                wasStopped = false
+                arguments?.putInt(ARG_SOURCE, R.id.SelectDeviceFragment)
+                if (this@ConnectingFragment.isAdded) findNavController().popBackStack(
+                    R.id.SelectDeviceFragment,
+                    false
+                )
+            }
         }
+    }
+
+    private fun setSource(id: Int) {
+        arguments?.putInt(ARG_SOURCE, id)
+        source = id
     }
 
     override fun onResume() {
         if (D) Log.d(TAG, "onResume()")
         super.onResume()
+
         (activity as MainActivity).setAlpha(0.1f)
         (activity as MainActivity).setFragmentDescription(R.string.connecting_fragment_label)
-        if (device != null) {
-            if (!isConnected) {
+        when (source) {
+            R.id.SelectDeviceFragment -> {
+                Log.i(TAG, "Resume from SelectDeviceFragment")
                 Log.i(TAG, "Connecting to ${device!!.address}")
-                isConnected = (activity as MainActivity).connect(device!!, connectionCallback)
-                if (!isConnected) {
+                isConnecting = (activity as MainActivity).connect(device!!, connectionCallback)
+                if (!isConnecting) {
                     findNavController().popBackStack(R.id.SelectDeviceFragment, false)
                 }
-            } else {
-                Log.i(TAG, "Already connected to ${device!!.address}?!?")
+                setSource(R.id.ConnectingFragment)
+                return
             }
-        }  else {
-            if (!isConnected) {
-                Log.i(TAG, "Reconnecting")
-                isConnected = (activity as MainActivity).reconnect(connectionCallback)
-                if (!isConnected) {
+            R.id.ConnectingFragment -> {
+                Log.i(TAG, "Resume from ConnectingFragment")
+                if (wasStopped) {
+                    wasStopped = false
+                    setSource(R.id.SelectDeviceFragment)
                     findNavController().popBackStack(R.id.SelectDeviceFragment, false)
                 }
-            } else {
-                Log.i(TAG, "Already connected?!?")
-                findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+                return
+            }
+            R.id.MainMenuFragment -> {
+                Log.i(TAG, "Resume from MainMenuFragment")
+                if ((activity as MainActivity).device != null) {
+                    // Connected; disconnect and select new device.
+                    (activity as MainActivity).close()
+                    setSource(R.id.SelectDeviceFragment)
+                    findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+                } else {
+                    // Disconnected; reconnect or connect to last device.
+                    isConnecting = (activity as MainActivity).reconnect(connectionCallback)
+                    if (!isConnecting) {
+                        isConnecting = (activity as MainActivity).connect(device!!, connectionCallback)
+                        if (!isConnecting) {
+                            Log.w(TAG, "Connect failed")
+                            setSource(R.id.SelectDeviceFragment)
+                            findNavController().popBackStack(R.id.SelectDeviceFragment, false)
+                        }
+                    }
+                }
+            }
+            else -> {
+                Log.e(TAG, "Unexpected source = $source")
             }
         }
     }
@@ -89,7 +152,7 @@ class ConnectingFragment : Fragment(R.layout.connecting_fragment) {
     override fun onStop() {
         if (D) Log.d(TAG, "onStop()")
         super.onStop()
-        device = null
+        wasStopped = (source == R.id.ConnectingFragment)
     }
 
     private fun onDeviceConnected() {
@@ -98,7 +161,10 @@ class ConnectingFragment : Fragment(R.layout.connecting_fragment) {
     }
 
     companion object {
-        private val TAG = ConnectingFragment::class.java.name
+        private val TAG = ConnectingFragment::class.java.simpleName
         private const val D = true
+
+        const val ARG_DEVICE = "device"
+        const val ARG_SOURCE = "source"
     }
 }

@@ -33,7 +33,7 @@
     <string name="save_settings_button_text">Save Settings</string>
     <string name="input_gain_label">Input Gain</string>
     <string name="receive_audio_level_label">Receive Audio Level</string>
-    <string name="receive_audio_level_help">Open the squelch on the radio and adjust the volume level so the bare intermittently touches the right side.</string>
+    <string name="receive_audio_level_help">Open the squelch on the radio and adjust the volume level so the audio meter is green and the indicator almost touches the right side.</string>
     <string name="input_twist_label">Input Twist</string>
     <string name="input_twist_min">-3dB</string>
     <string name="input_twist_max">9dB</string>
@@ -84,4 +84,14 @@
     <string name="date_time_label">RTC Date/Time (UTC)</string>
     <string name="rescan">Rescan</string>
     <string name="save">Save</string>
+    <string name="receive_audio_level_slider_description">Receive audio level meter</string>
+    <string name="input_gain_slider_description">Input gain control slider</string>
+    <string name="input_twist_slider_description">input twist control slider</string>
+    <string name="input_gain_help_text">Input gain should be 0 for HTs. Otherwise, adjust gain to the minimum required to achieve desired input level.</string>
+    <string name="input_twist_help_text">Input twist should be 0 for most radios. When using discriminator output, it may be beneficial to increase this level.</string>
+    <string name="modem_1200_afsk">1200 baud AFSK</string>
+    <string name="modem_300_afsk">300 baud AFSK</string>
+    <string name="modem_9600_fsk">9600 baud G3RUH/GMSK</string>
+    <string name="modem_M17">M17 4-FSK</string>
+    <string name="modem_unknown">unknown modem type</string>
 </resources>

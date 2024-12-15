@@ -8,92 +8,92 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
+        android:layout_height="match_parent">
 
         <Button
             android:id="@+id/receive_audio_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:alpha=".75"
+            android:layout_marginTop="@dimen/button_top_margin"
             android:gravity="start|center_vertical"
+            android:maxWidth="320dp"
             android:text="@string/receive_audio_button_text"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:icon="@drawable/microphone_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_max="320dp" />
 
         <Button
             android:id="@+id/transmit_audio_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:alpha=".75"
+            android:layout_marginTop="@dimen/button_top_margin"
             android:gravity="start|center_vertical"
             android:text="@string/transmit_audio_button_text"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:icon="@drawable/speaker_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/receive_audio_button" />
+            app:layout_constraintTop_toBottomOf="@+id/receive_audio_button"
+            app:layout_constraintWidth_max="320dp" />
 
         <Button
             android:id="@+id/power_settings_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:alpha=".75"
+            android:layout_marginTop="@dimen/button_top_margin"
             android:gravity="start|center_vertical"
             android:text="@string/power_settings_button_text"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:icon="@drawable/power_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/transmit_audio_button" />
+            app:layout_constraintTop_toBottomOf="@+id/transmit_audio_button"
+            app:layout_constraintWidth_max="320dp" />
 
         <Button
             android:id="@+id/kiss_parameters_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:alpha=".75"
+            android:layout_marginTop="@dimen/button_top_margin"
             android:gravity="start|center_vertical"
             android:text="@string/kiss_parameters_text"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:icon="@drawable/network_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/power_settings_button" />
+            app:layout_constraintTop_toBottomOf="@+id/power_settings_button"
+            app:layout_constraintWidth_max="320dp" />
 
         <Button
             android:id="@+id/modem_configuration_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:alpha=".75"
+            android:layout_marginTop="@dimen/button_top_margin"
             android:gravity="start|center_vertical"
             android:text="@string/modem_configuration_button_text"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:icon="@drawable/gear_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/kiss_parameters_button" />
+            app:layout_constraintTop_toBottomOf="@+id/kiss_parameters_button"
+            app:layout_constraintWidth_max="320dp" />
 
         <Button
             android:id="@+id/tnc_information_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/text_margin"
-            android:alpha=".75"
+            android:layout_marginTop="@dimen/button_top_margin"
             android:gravity="start|center_vertical"
             android:text="@string/tnc_information_button_text"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:icon="@drawable/info_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/modem_configuration_button" />
+            app:layout_constraintTop_toBottomOf="@+id/modem_configuration_button"
+            app:layout_constraintWidth_max="320dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

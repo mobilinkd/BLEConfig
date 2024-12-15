@@ -138,11 +138,18 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume() ->  ${this@SelectDeviceFragment.activity?.intent?.action}")
+        (activity as MainActivity).tncViewModel.clear()
         (activity as MainActivity).setAlpha(1.0f)
         (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_label)
         (activity as MainActivity).close()
         actionBar = activity?.getActionBar()
         scanForTNCs()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (D) Log.d(TAG, "onPause()")
+        stopScanning()
     }
 
     override fun onDestroyView() {
@@ -227,7 +234,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
                 return
             }
             if (leDeviceListAdapter.size() == 0) {
-                (activity as MainActivity).setAlpha(0.25f)
+                (activity as MainActivity?)?.setAlpha(0.25f)
             }
             leDeviceListAdapter.addDevice(result)
 
@@ -239,7 +246,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         if (scanning) {
             scanning = false
             bluetoothLeScanner.stopScan(leScanCallback)
-            requireActivity().invalidateOptionsMenu()
+            activity?.invalidateOptionsMenu()
             if (D) Log.d(TAG, "BLE scanning stopped")
         }
     }
@@ -262,11 +269,15 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
     @SuppressLint("MissingPermission")
     override fun onBluetoothLEDeviceSelected(device: BluetoothDevice) {
         stopScanning()
-        findNavController().navigate(R.id.action_SelectDeviceFragment_to_ConnectingFragment, bundleOf(ARG_DEVICE to device))
+        findNavController().navigate(
+            R.id.action_SelectDeviceFragment_to_ConnectingFragment,
+            bundleOf(
+                ConnectingFragment.ARG_DEVICE to device,
+                ConnectingFragment.ARG_SOURCE to R.id.SelectDeviceFragment))
     }
 
     companion object {
-        private val TAG = SelectDeviceFragment::class.java.name
+        private val TAG = SelectDeviceFragment::class.java.simpleName
         private const val D = true
         private val TNC_SERVICE_UUID = UUID.fromString("00000001-ba2a-46c9-ae49-01b0961f68bb")
     }

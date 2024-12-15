@@ -60,8 +60,11 @@
             app:argType="android.bluetooth.BluetoothDevice" />
         <action
             android:id="@+id/action_ConnectingFragment_to_MainMenuFragment"
-            app:destination="@id/MainMenuFragment"
-            app:popUpTo="@id/SelectDeviceFragment" />
+            app:destination="@id/MainMenuFragment" />
+        <argument
+            android:name="source"
+            app:argType="reference"
+            android:defaultValue="@id/SelectDeviceFragment" />
     </fragment>
     <action
         android:id="@+id/action_global_SelectDeviceFragment"
