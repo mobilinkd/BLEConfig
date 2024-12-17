@@ -8,7 +8,9 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:maxWidth="640dp"
+        android:layout_gravity="center" >
 
         <Button
             android:id="@+id/receive_audio_button"
