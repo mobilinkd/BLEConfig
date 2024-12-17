@@ -22,6 +22,24 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
     private var textView: TextView
     private var _listener: NumberChooserListener? = null
 
+    fun updateValueIfValid(view: TextView) {
+        var v = 0
+        try {
+            if (view.text.isNotEmpty()) {
+                v = Integer.parseInt(view.text.toString())
+            }
+            if (value in _minimum  .. _maximum) {
+                _value = v
+                _listener?.onValueChanged(this)
+            } else {
+                view.text = _value.toString()
+            }
+        } catch (_: NumberFormatException) {
+            view.text = _value.toString()
+        }
+
+    }
+
     init {
         if (D) Log.d(TAG, "init")
         val inflater =
@@ -47,32 +65,11 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
         textView.text = _value.toString()
         incrementButton.setOnClickListener { onIncrement() }
         decrementButton.setOnClickListener { onDecrement() }
-        textView.doAfterTextChanged {
-            var v = 0
-            try {
-                if (textView.text.isNotEmpty()) {
-                    v = Integer.parseInt(textView.text.toString())
-                }
-                if (v < _minimum) {
-                    _value = _minimum
-                } else if (v > _maximum) {
-                    _value = _maximum
-                } else {
-                    _value = v
-                }
-                if (_value != v) {
-                    textView.text = _value.toString()
-                }
-            } catch (_: NumberFormatException) {
-                textView.text = _value.toString()
-            }
-        }
+        textView.doAfterTextChanged { updateValueIfValid(textView) }
 
         textView.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
             if (!hasFocus) { // Lost focus
-                val tmp = _value.toString()
-                if (textView.text.toString() != tmp) textView.text = tmp
-                _listener?.onValueChanged(this@NumberChooser)
+                updateValueIfValid(textView)
             }
         }
     }
@@ -85,6 +82,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
         get() = _value
         set(value) {
             textView.text = value.toString()
+            _listener?.onValueChanged(this@NumberChooser)
         }
 
     var minimumValue: Int
@@ -108,11 +106,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
             }
         }
 
-    var listener: NumberChooserListener?
-        get() = _listener
-        set(value) {
-            _listener = value
-        }
+    val listener: NumberChooserListener? get() = _listener
 
     // parent activity will implement this method to respond to click events
     abstract class NumberChooserListener {
@@ -130,16 +124,15 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
             decrementButton.isEnabled = true
         }
 
-        if (_value < _maximum) {
+        if (value < _maximum) {
             _value += 1
-            textView.text = _value.toString()
+            textView.text = value.toString()
         }
 
-        if (_value >= _maximum) {
+        if (value >= _maximum) {
             incrementButton.isEnabled = false
         }
     }
-
 
     private fun onDecrement() {
         if (!incrementButton.isEnabled) {
