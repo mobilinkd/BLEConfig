@@ -409,7 +409,11 @@ class BluetoothLEService : Service() {
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
             if (D) Log.i(TAG, "MTU changed to $mtu")
             this@BluetoothLEService.mtu = mtu - 3
-            onConnected(gatt)
+            if (rxCharacteristic != null) {
+                onConnected(gatt)
+            } else {
+                Log.w(TAG, "onMtuChanged() when discovery not yet complete.")
+            }
         }
 
         @TargetApi(Build.VERSION_CODES.S_V2)
