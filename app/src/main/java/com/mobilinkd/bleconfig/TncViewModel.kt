@@ -154,7 +154,7 @@ class TncViewModel: ViewModel() {
                 tncInputGain.value = toUint16(packet, 2)
             }
             17 -> { // Verbosity
-                tncVerbosityLevel.value = packet[2].toInt()
+                tncVerbosityLevel.value = packet[2].toInt() and 0xFF
             }
             25 -> { // RX Twist
                 tncInputTwist.value = packet[2].toInt()
@@ -164,19 +164,19 @@ class TncViewModel: ViewModel() {
             }
             33 -> { // TX Delay
                 Log.i(TAG, "TX Delay = ${packet[2].toUInt().toInt()}")
-                tncTxDelay.value = packet[2].toUInt().toInt()
+                tncTxDelay.value = packet[2].toInt() and 0xFF
             }
             34 -> { // Persistence
-                tncPersistence.value = packet[2].toUInt().toInt()
+                tncPersistence.value = packet[2].toInt() and 0xFF
             }
             35 -> { // Slot Time
-                tncSlotTime.value = packet[2].toUInt().toInt()
+                tncSlotTime.value = packet[2].toInt() and 0xFF
             }
             36 -> { // TX Tail
-                tncTxTail.value = packet[2].toUInt().toInt()
+                tncTxTail.value = packet[2].toInt() and 0xFF
             }
             37 -> { // Duplex
-                tncDuplex.value = packet[2].toInt()
+                tncDuplex.value = packet[2].toInt() and 0xFF
             }
             40 -> { // Firmware Version
                 tncFirmwareVersion.value = packet.drop(2).toByteArray().toString(Charsets.UTF_8)
@@ -194,47 +194,47 @@ class TncViewModel: ViewModel() {
                 tncDateTime.value = bcdDateToString(packet.drop(2).toByteArray())
             }
             70 -> { // Connection Tracking
-                tncConnectionTracking.value = packet[2].toInt()
+                tncConnectionTracking.value = packet[2].toInt() and 0xFF
             }
             74 -> { // USB Power On
-                tncUsbPowerOn.value = packet[2].toInt()
+                tncUsbPowerOn.value = packet[2].toInt() and 0xFF
             }
             76 -> { // USB Power Off
-                tncUsbPowerOff.value = packet[2].toInt()
+                tncUsbPowerOff.value = packet[2].toInt() and 0xFF
             }
             80 -> { // PTT Style
-                tncPttStyle.value = packet[2].toInt()
+                tncPttStyle.value = packet[2].toInt() and 0xFF
             }
             82 -> { // Passall
-                tncPassall.value = packet[2].toInt()
+                tncPassall.value = packet[2].toInt() and 0xFF
             }
             84 -> { // RX Polarity
-                tncRxPolarity.value = packet[2].toInt()
+                tncRxPolarity.value = packet[2].toInt() and 0xFF
             }
             86 -> { // TX Polarity
-                tncTxPolarity.value = packet[2].toInt()
+                tncTxPolarity.value = packet[2].toInt() and 0xFF
             }
             119 -> { // Min TX Twist
-                tncMinimumTxTwist.value = packet[2].toInt()
+                tncMinimumTxTwist.value = packet[2].toInt() and 0xFF
             }
             120 -> { // Max TX Twist
-                tncMaximumTxTwist.value = packet[2].toInt()
+                tncMaximumTxTwist.value = packet[2].toInt() and 0xFF
             }
             121 -> { // Min RX Twist
-                tncMinimumRxTwist.value = packet[2].toInt()
+                tncMinimumRxTwist.value = packet[2].toInt() and 0xFF
             }
             122 -> { // Max RX Twist
-                tncMaximumRxTwist.value = packet[2].toInt()
+                tncMaximumRxTwist.value = packet[2].toInt() and 0xFF
             }
             123 -> { // API Version
                 tncApiVersion.value = packet[2].toInt()
                 Log.i(TAG, "API Version = ${tncApiVersion.value}")
             }
             124 -> { // Min RX Gain
-                tncMinimumRxGain.value = (packet[2].toUInt() * 256U + packet[3].toUInt()).toInt()
+                tncMinimumRxGain.value = toUint16(packet, 2)
             }
             125 -> { // Max RX Gain
-                tncMaximumRxGain.value = (packet[2].toUInt() * 256U + packet[3].toUInt()).toInt()
+                tncMaximumRxGain.value = toUint16(packet, 2)
             }
             126 -> { // Capabilities
                 tncCapabilities.value = packet[2].toInt()
