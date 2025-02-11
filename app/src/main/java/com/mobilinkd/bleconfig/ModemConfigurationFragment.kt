@@ -19,12 +19,14 @@ class ModemConfigurationFragment : Fragment(R.layout.modem_configuration_fragmen
     private val tncViewModel: TncViewModel by activityViewModels()
     private lateinit var modemList: MutableList<String>
     private lateinit var modemSpinnerAdapter: ArrayAdapter<String>
+    private var isUserInteraction = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        if (D) Log.d(TAG, "onCreateView()")
         binding = ModemConfigurationFragmentBinding.inflate(inflater, container, false)
 
         modemList = mutableListOf(getString(R.string.modem_1200_afsk))
@@ -32,16 +34,27 @@ class ModemConfigurationFragment : Fragment(R.layout.modem_configuration_fragmen
         modemSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.modemTypeSpinner.adapter = modemSpinnerAdapter
 
+        binding.modemTypeSpinner.setOnTouchListener { v, event ->
+            v.performClick()
+            isUserInteraction = true
+            false
+        }
+
         binding.modemTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {
                 if (D) Log.d(TAG, "onNothingSelected")
             }
 
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val doUpdate = isUserInteraction
+                isUserInteraction = false
+
                 val modemName = modemList[position]
                 val modemType = getModemNumber(modemName)
                 if (D) Log.d(TAG, "onItemSelected = $position, $modemName, $modemType")
-                (activity as MainActivity).tncInterface.setModemType(modemType)
+                if (doUpdate) {
+                    (activity as MainActivity).tncInterface.setModemType(modemType)
+                }
             }
         }
         binding.passAllSwitch.setOnClickListener { onPassAllChanged() }
@@ -64,6 +77,7 @@ class ModemConfigurationFragment : Fragment(R.layout.modem_configuration_fragmen
     }
 
     override fun onResume() {
+        if (D) Log.d(TAG, "onResume()")
         super.onResume()
         (activity as MainActivity?)?.let {
             if (it.device == null) {
@@ -93,8 +107,9 @@ class ModemConfigurationFragment : Fragment(R.layout.modem_configuration_fragmen
         val modemName = MODEM_TYPES[modem]
         modemName?.let {
             modemList.forEachIndexed { index, s ->
-                if (s == getString(modemName))
-                    binding.modemTypeSpinner.setSelection(index)
+                if (s == getString(modemName)) {
+                    binding.modemTypeSpinner.setSelection(index, false)
+                }
             }
         }
     }

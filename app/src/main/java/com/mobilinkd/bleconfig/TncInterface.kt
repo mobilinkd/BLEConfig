@@ -14,7 +14,6 @@ class TncInterface(os: OutputStream) {
     val modified get() = tncHasChanged
 
     fun flush() {
-        tncHasChanged = true
         outputStream.flush()
     }
 
@@ -39,28 +38,32 @@ class TncInterface(os: OutputStream) {
         outputStream.flush()
     }
 
-    fun setTxDelay(delay: Int) {
-        TNC_SET_TX_DELAY[1] = delay.toByte()
+    fun setTxDelay(v: Int) {
+        if (D) Log.d(TAG, "setTxDelay($v)")
+        TNC_SET_TX_DELAY[1] = v.toByte()
         encoder.encode(TNC_SET_TX_DELAY, outputStream)
         tncHasChanged = true
         outputStream.flush()
     }
 
-    fun setPersistence(p: Int) {
-        TNC_SET_PERSISTENCE[1] = p.toByte()
+    fun setPersistence(v: Int) {
+        if (D) Log.d(TAG, "setPersistence($v)")
+        TNC_SET_PERSISTENCE[1] = v.toByte()
         encoder.encode(TNC_SET_PERSISTENCE, outputStream)
         tncHasChanged = true
         outputStream.flush()
     }
 
-    fun setSlotTime(slot: Int) {
-        TNC_SET_SLOT_TIME[1] = slot.toByte()
+    fun setSlotTime(v: Int) {
+        if (D) Log.d(TAG, "setSlotTime($v)")
+        TNC_SET_SLOT_TIME[1] = v.toByte()
         encoder.encode(TNC_SET_SLOT_TIME, outputStream)
         tncHasChanged = true
         outputStream.flush()
     }
 
     fun setDuplex(v: Boolean) {
+        if (D) Log.d(TAG, "setDuplex($v)")
         TNC_SET_DUPLEX[1] = if (v) 1 else 0
         encoder.encode(TNC_SET_DUPLEX, outputStream)
         tncHasChanged = true
@@ -68,6 +71,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setUsbPowerOn(v: Boolean) {
+        if (D) Log.d(TAG, "setUsbPowerOn($v)")
         TNC_SET_USB_POWER_ON[2] = if (v) 1 else 0
         encoder.encode(TNC_SET_USB_POWER_ON, outputStream)
         tncHasChanged = true
@@ -75,6 +79,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setUsbPowerOff(v: Boolean) {
+        if (D) Log.d(TAG, "setUsbPowerOff($v)")
         TNC_SET_USB_POWER_OFF[2] = if (v) 1 else 0
         encoder.encode(TNC_SET_USB_POWER_OFF, outputStream)
         tncHasChanged = true
@@ -82,6 +87,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setInputGain(v: Int) {
+        if (D) Log.d(TAG, "setInputGain($v)")
         TNC_SET_INPUT_GAIN[2] = ((v shr 8) and 0xFF).toByte()
         TNC_SET_INPUT_GAIN[3] = (v and 0xFF).toByte()
         encoder.encode(TNC_SET_INPUT_GAIN, outputStream)
@@ -90,6 +96,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setInputTwist(v: Int) {
+        if (D) Log.d(TAG, "setInputTwist($v)")
         TNC_SET_INPUT_TWIST[2] = (v and 0xFF).toByte()
         encoder.encode(TNC_SET_INPUT_TWIST, outputStream)
         tncHasChanged = true
@@ -97,6 +104,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setModemType(v: Int) {
+        if (D) Log.d(TAG, "setModemType($v)")
         TNC_SET_MODEM_TYPE[3] = (v and 0xFF).toByte()
         encoder.encode(TNC_SET_MODEM_TYPE, outputStream)
         tncHasChanged = true
@@ -104,6 +112,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setPassAll(v: Boolean) {
+        if (D) Log.d(TAG, "setPassAll($v)")
         TNC_SET_PASSALL[2] = if (v) 1 else 0
         encoder.encode(TNC_SET_PASSALL, outputStream)
         tncHasChanged = true
@@ -111,6 +120,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setReceivePolarity(v: Boolean) {
+        if (D) Log.d(TAG, "setReceivePolarity($v)")
         TNC_SET_RX_REVERSE_POLARITY[2] = if (v) 1 else 0
         encoder.encode(TNC_SET_RX_REVERSE_POLARITY, outputStream)
         tncHasChanged = true
@@ -118,6 +128,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setTransmitPolarity(v: Boolean) {
+        if (D) Log.d(TAG, "setTransmitPolarity($v)")
         TNC_SET_TX_REVERSE_POLARITY[2] = if (v) 1 else 0
         encoder.encode(TNC_SET_TX_REVERSE_POLARITY, outputStream)
         tncHasChanged = true
@@ -126,6 +137,7 @@ class TncInterface(os: OutputStream) {
 
 
     fun setPttStyle(v: Int) {
+        if (D) Log.d(TAG, "setPttStyle($v)")
         TNC_SET_PTT_CHANNEL[2] = v.toByte()
         encoder.encode(TNC_SET_PTT_CHANNEL, outputStream)
         tncHasChanged = true
@@ -133,6 +145,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setTransmitGain(v: Int) {
+        if (D) Log.d(TAG, "setTransmitGain($v)")
         TNC_SET_OUTPUT_GAIN[2] = ((v shr 8) and 0xFF).toByte()
         TNC_SET_OUTPUT_GAIN[3] = (v and 0xFF).toByte()
         encoder.encode(TNC_SET_OUTPUT_GAIN, outputStream)
@@ -141,6 +154,7 @@ class TncInterface(os: OutputStream) {
     }
 
     fun setTransmitTwist(v: Int) {
+        if (D) Log.d(TAG, "setTransmitTwist($v)")
         TNC_SET_OUTPUT_TWIST[2] = (v and 0xFF).toByte()
         encoder.encode(TNC_SET_OUTPUT_TWIST, outputStream)
         tncHasChanged = true
@@ -193,6 +207,7 @@ class TncInterface(os: OutputStream) {
             Log.i(TAG, "Saving state to EEPROM")
             encoder.encode(TNC_SAVE_EEPROM, outputStream)
             outputStream.flush()
+            tncHasChanged = false
         }
     }
 

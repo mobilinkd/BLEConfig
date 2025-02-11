@@ -21,23 +21,28 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
     private var decrementButton: MaterialButton
     private var textView: TextView
     private var _listener: NumberChooserListener? = null
+    private var isUserInteraction = false
 
     fun updateValueIfValid(view: TextView) {
+        if (D) Log.d(TAG, "updateValueIfValid(${view.text}), isUserInteraction = $isUserInteraction")
         var v = 0
+        val doUpdate = isUserInteraction
+        isUserInteraction = false
         try {
             if (view.text.isNotEmpty()) {
                 v = Integer.parseInt(view.text.toString())
             }
-            if (value in _minimum  .. _maximum) {
+            if (v in _minimum  .. _maximum) {
                 _value = v
-                _listener?.onValueChanged(this)
+                if (doUpdate) {
+                    _listener?.onValueChanged(this)
+                }
             } else {
                 view.text = _value.toString()
             }
         } catch (_: NumberFormatException) {
             view.text = _value.toString()
         }
-
     }
 
     init {
@@ -69,6 +74,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
 
         textView.onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
             if (!hasFocus) { // Lost focus
+                isUserInteraction = true
                 updateValueIfValid(textView)
             }
         }
@@ -82,7 +88,10 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
         get() = _value
         set(value) {
             textView.text = value.toString()
-            _listener?.onValueChanged(this@NumberChooser)
+            if (isUserInteraction) {
+                _listener?.onValueChanged(this@NumberChooser)
+            }
+            isUserInteraction = false
         }
 
     var minimumValue: Int
@@ -126,6 +135,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
 
         if (value < _maximum) {
             _value += 1
+            isUserInteraction = true
             textView.text = value.toString()
         }
 
@@ -141,6 +151,7 @@ class NumberChooser(context: Context, attrs: AttributeSet) : ConstraintLayout(co
 
         if (_value > _minimum) {
             _value -= 1
+            isUserInteraction = true
             textView.text = _value.toString()
         }
 
