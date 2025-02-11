@@ -63,6 +63,7 @@ class BluetoothLEService : Service() {
     private var receiveThread = ReceiveThread()
     private var connectionState = ConnectionState.CLOSED
     private var shutdownTimer: Timer? = null
+    private var timeoutTimer: Timer? = null
     private lateinit var serviceHandler: Handler
     private lateinit var broadcastManager: LocalBroadcastManager
 
@@ -230,10 +231,9 @@ class BluetoothLEService : Service() {
         val intent = Intent(BLE_EVENT)
         intent.putExtra(BLE_EVENT_ACTION, GATT_DISCONNECTED)
         broadcastManager.sendBroadcast(intent)
-
     }
 
-    fun connect(device: BluetoothDevice, paired: Boolean = false): Boolean {
+    fun connect(device: BluetoothDevice, doRefresh: Boolean = false): Boolean {
         if (D) Log.d(TAG, "connect(device = ${device.address}), state = $connectionState")
         synchronized(connectionState) {
             when (connectionState) {
@@ -250,22 +250,28 @@ class BluetoothLEService : Service() {
                 else -> {
                     this.device = device
                     connectionState = ConnectionState.CONNECTING
-                    return connectInternal(device, paired)
+                    return connectInternal(device, doRefresh)
                 }
             }
         }
     }
 
+    /**
+     * Call the internal gatt.refresh() function to refresh the cached values for the BLE
+     * device.
+     *
+     * @param gatt is the gatt connection to the device which should be refreshed.
+     * @return true if the refresh was successful, otherwise false.
+     */
     private fun refresh(gatt: BluetoothGatt): Boolean {
         var isRefreshed = false
         try {
             val refresh = gatt.javaClass.getMethod("refresh")
             isRefreshed = (refresh.invoke(gatt) as Boolean)
-            Log.i(TAG,"Gatt cache refresh successful for ${gatt.device.address}")
+            Log.i(TAG,"Gatt cache refresh invoked for ${gatt.device.address} = $isRefreshed")
         } catch (e: Exception) {
             Log.e(TAG, "Exception occurred while refreshing device: $e")
         }
-
         return isRefreshed
     }
 
@@ -287,7 +293,38 @@ class BluetoothLEService : Service() {
         broadcastManager.sendBroadcast(intent)
     }
 
-    // Various callback methods defined by the BLE API.
+    private fun enableNotification(gatt: BluetoothGatt) {
+        this@BluetoothLEService.rxCharacteristic?.let {
+            val descriptor = it.getDescriptor(CONFIG_DESCRIPTOR_UUID)
+
+            if (D) Log.d(TAG, "Writing descriptor to enable notification")
+
+            timeoutTimer = Timer("timeoutTimer", false)
+            timeoutTimer?.schedule(5000) { onWriteDescriptorTimeout(gatt) }
+
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                gatt.writeDescriptor(
+                    descriptor,
+                    BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                )
+            } else {
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                gatt.writeDescriptor(descriptor)
+            }
+
+        }
+    }
+
+    private fun onWriteDescriptorTimeout(gatt: BluetoothGatt) {
+        if (retryCount > 0) {
+            Log.w(TAG, "writeDescriptor timed out, retrying.")
+            enableNotification(gatt)
+        } else {
+            Log.e(TAG, "writeDescriptor timed out.")
+        }
+    }
+
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(
                 gatt: BluetoothGatt,
@@ -327,9 +364,8 @@ class BluetoothLEService : Service() {
                                 synchronized(connectionState) {
                                     connectionState = ConnectionState.RETRYING
                                 }
-//                                gatt.close()
-//                                connect(device!!)
-                                gatt.connect()
+                                gatt.close()
+                                connect(device!!)
                                 retryCount = 0
                             } else {
                                 Log.e(TAG, "Authorization failed")
@@ -355,7 +391,13 @@ class BluetoothLEService : Service() {
                 val service = gatt.getService(TNC_SERVICE_UUID)
                 if (service == null) {
                     Log.w(TAG, "KISS TNC Service not found")
-                    discoveryFailed("KISS TNC Service not found")
+                    if (retryCount > 0) {
+                        refresh(gatt)
+                        retryCount = 0
+                        gatt.discoverServices()
+                    } else {
+                        discoveryFailed("KISS TNC Service not found")
+                    }
                 } else {
                     Log.d(TAG, "KISS TNC Service found")
 
@@ -365,28 +407,14 @@ class BluetoothLEService : Service() {
 
                     val rxCharacteristic = service.getCharacteristic(TNC_SERVICE_RX_UUID)
                     val txCharacteristic = service.getCharacteristic(TNC_SERVICE_TX_UUID)
-                    val descriptor = rxCharacteristic.getDescriptor(CONFIG_DESCRIPTOR_UUID)
 
                     this@BluetoothLEService.rxCharacteristic = rxCharacteristic
                     this@BluetoothLEService.txCharacteristic = txCharacteristic
 
                     txCharacteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
-                    if (!gatt.setCharacteristicNotification(rxCharacteristic, true)) {
-                        Log.e(TAG, "Could not enable notification")
-                        return
-                    }
-
-                    if (D) Log.d(TAG, "Writing descriptor to enable notification")
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        gatt.writeDescriptor(
-                            descriptor,
-                            BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        )
-                    } else {
-                        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                        gatt.writeDescriptor(descriptor)
-                    }
+                    // Always request an MTU change before the first write, including
+                    // descriptor writes.
+                    gatt.requestMtu(517) // This requires API Level 21
                 }
             }
         }
@@ -396,27 +424,50 @@ class BluetoothLEService : Service() {
             descriptor: BluetoothGattDescriptor?,
             status: Int
         ) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                if (D) Log.i(TAG, "Notification enabled")
-                gatt.requestMtu(517) // This requires API Level 21
-            } else {
-                // Should result in a disconnect...
-                Log.w(TAG,"Descriptor write failed, status = $status")
-                connectionFailed("Descriptor write failed")
+            timeoutTimer?.cancel()
+            timeoutTimer = null
+
+            when (status) {
+                BluetoothGatt.GATT_SUCCESS -> {
+                    if (D) Log.i(TAG, "Notification enabled")
+                    onConnected(gatt)
+                }
+                4 -> { // INVALID_PDU
+                    if (D) Log.e(TAG, "Invalid PDU")
+                    // Retry INVALID_PDU failure once.
+                    if (retryCount > 0) {
+                        enableNotification(gatt)
+                    }
+                }
+                else -> {
+                    // Should result in a disconnect...
+                    Log.w(TAG,"Descriptor write failed, status = $status")
+                    connectionFailed("Descriptor write failed")
+                }
             }
+            retryCount = 0
         }
 
         override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
-            if (D) Log.i(TAG, "MTU changed to $mtu")
+            if (D) Log.i(TAG, "MTU changed to $mtu (status = $status)")
             this@BluetoothLEService.mtu = mtu - 3
-            if (rxCharacteristic != null) {
-                onConnected(gatt)
-            } else {
+            this@BluetoothLEService.rxCharacteristic?.let {
+                if (!gatt.setCharacteristicNotification(rxCharacteristic, true)) {
+                    Log.e(TAG, "Could not enable notification")
+                    connectionFailed("Could not enable notification")
+                    return
+                }
+                retryCount = 1
+                enableNotification(gatt)
+            } ?: {
+                // This can happen when Android initiates an MTU change. Ignore it as we should
+                // get another call after Discovery completes.
                 Log.w(TAG, "onMtuChanged() when discovery not yet complete.")
             }
         }
 
         @TargetApi(Build.VERSION_CODES.S_V2)
+        @Deprecated("Deprecated in API level 33")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
@@ -424,6 +475,7 @@ class BluetoothLEService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return // handled below
 
             if (D) Log.d(TAG, "onCharacteristicChanged()")
+            @Suppress("DEPRECATION")
             _inputStream.receive(characteristic.value)
         }
 
@@ -457,6 +509,7 @@ class BluetoothLEService : Service() {
         if (D) Log.d(TAG, "send(${data.toHexString()})")
 
         return if (txCharacteristic != null && gatt!= null) {
+            @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 txCharacteristic
                 val result = gatt!!.writeCharacteristic(
@@ -492,16 +545,18 @@ class BluetoothLEService : Service() {
 
     private fun connectInternal(device: BluetoothDevice, doRefresh: Boolean = false): Boolean {
         synchronized(connectionState) {
-            // May have called close() before this delayed function is called.
             if (connectionState == ConnectionState.CONNECTING) {
                 if (D) Log.d(TAG, "connectInternal() continuing.")
+                // The following 2 lines help us detect MTU changes we did not initiate.
+                rxCharacteristic = null
+                txCharacteristic = null
                 val gatt = device.connectGatt(
-                    applicationContext,
-                    false,
-                    gattCallback,
-                    BluetoothDevice.TRANSPORT_LE
-                )
-                if (doRefresh) refresh(gatt) // Needed to consistently discover BLE services.
+                        applicationContext,
+                        false,
+                        gattCallback,
+                        BluetoothDevice.TRANSPORT_LE
+                    )
+                if (doRefresh) refresh(gatt) // May be helpful when GATT discovery fails.
                 this@BluetoothLEService.gatt = gatt
                 return true
             } else {
@@ -601,6 +656,7 @@ class BluetoothLEService : Service() {
         synchronized(connectionState) {
             if (connectionState == ConnectionState.CONNECTED) {
                 return gatt?.let {
+                    connectionState = ConnectionState.DISCONNECTING
                     it.disconnect()
                     true
                 } ?: false
@@ -612,6 +668,13 @@ class BluetoothLEService : Service() {
 
     fun close(gatt: BluetoothGatt? = this.gatt) {
         if (D) Log.d(TAG, "close()")
+        val start = System.currentTimeMillis()
+        while (connectionState == ConnectionState.DISCONNECTING) {
+            Thread.sleep(100)
+            if (System.currentTimeMillis() - start > 5000) {
+                break
+            }
+        }
         synchronized(connectionState) {
             gatt?.close()
             this.gatt = null
