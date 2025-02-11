@@ -122,7 +122,8 @@ class ConnectingFragment : Fragment(R.layout.connecting_fragment) {
                 Log.i(TAG, "Resume from MainMenuFragment")
                 if ((activity as MainActivity).device != null) {
                     // Connected; disconnect and select new device.
-                    (activity as MainActivity).close()
+                    (activity as MainActivity).tncInterface.saveIfChanged()
+                    (activity as MainActivity).disconnect()
                     setSource(R.id.SelectDeviceFragment)
                     findNavController().popBackStack(R.id.SelectDeviceFragment, false)
                 } else {
