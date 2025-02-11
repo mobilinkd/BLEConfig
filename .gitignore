@@ -29,6 +29,7 @@ local.properties
 # IntelliJ project files
 .idea/workspace.xml
 .idea/tasks.xml
+.idea/deploymentTargetSelector.xml
 *.iml
 .idea/assetWizardSettings.xml
 .idea/dictionaries
