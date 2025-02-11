@@ -10,7 +10,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -24,13 +23,11 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.mobilinkd.bleconfig.databinding.ActivityMainBinding
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -111,15 +108,6 @@ class MainActivity : AppCompatActivity() {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         if (bluetoothManager.adapter == null) {
             Toast.makeText(this@MainActivity, R.string.no_bt_adapter, Toast.LENGTH_LONG).show()
-            finish()
-        }
-
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Toast.makeText(this@MainActivity, R.string.bt_perms_needed, Toast.LENGTH_SHORT).show()
             finish()
         }
     }
