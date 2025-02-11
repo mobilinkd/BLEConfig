@@ -63,7 +63,6 @@ class BluetoothLEService : Service() {
     private var receiveThread = ReceiveThread()
     private var connectionState = ConnectionState.CLOSED
     private var shutdownTimer: Timer? = null
-    private var timeoutTimer: Timer? = null
     private lateinit var serviceHandler: Handler
     private lateinit var broadcastManager: LocalBroadcastManager
     private var doRefresh = false
@@ -300,9 +299,6 @@ class BluetoothLEService : Service() {
 
             if (D) Log.d(TAG, "Writing descriptor to enable notification")
 
-            timeoutTimer = Timer("timeoutTimer", false)
-            timeoutTimer?.schedule(5000) { onWriteDescriptorTimeout(gatt) }
-
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeDescriptor(
@@ -314,15 +310,6 @@ class BluetoothLEService : Service() {
                 gatt.writeDescriptor(descriptor)
             }
 
-        }
-    }
-
-    private fun onWriteDescriptorTimeout(gatt: BluetoothGatt) {
-        if (retryCount > 0) {
-            Log.w(TAG, "writeDescriptor timed out, retrying.")
-            enableNotification(gatt)
-        } else {
-            Log.e(TAG, "writeDescriptor timed out.")
         }
     }
 
@@ -429,9 +416,6 @@ class BluetoothLEService : Service() {
             descriptor: BluetoothGattDescriptor?,
             status: Int
         ) {
-            timeoutTimer?.cancel()
-            timeoutTimer = null
-
             when (status) {
                 BluetoothGatt.GATT_SUCCESS -> {
                     if (D) Log.i(TAG, "Notification enabled")
