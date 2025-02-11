@@ -46,6 +46,13 @@ class MainMenuFragment : Fragment() {
                             activity?.finish()
                         }
                     }
+                    BluetoothLEService.GATT_CLOSED -> {
+                        Log.i(TAG, "GATT closed")
+                        device = null
+                        if (!findNavController().navigateUp()) {
+                            activity?.finish()
+                        }
+                    }
                     else -> {
                         if (D) Log.d(TAG, "bleBroadcastReceiver: action = $action ignored")
                     }
