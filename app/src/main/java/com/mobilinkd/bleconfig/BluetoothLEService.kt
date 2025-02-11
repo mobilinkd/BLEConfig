@@ -66,6 +66,7 @@ class BluetoothLEService : Service() {
     private var timeoutTimer: Timer? = null
     private lateinit var serviceHandler: Handler
     private lateinit var broadcastManager: LocalBroadcastManager
+    private var doRefresh = false
 
     val inputStream get(): InputStream = _inputStream
     val outputStream get(): OutputStream = _outputStream
@@ -336,6 +337,10 @@ class BluetoothLEService : Service() {
                 BluetoothProfile.STATE_CONNECTED -> {
                     Log.i(TAG, "Connected to ${gatt.device.name}.")
                     this@BluetoothLEService.gatt = gatt
+                    if (doRefresh) {
+                        refresh(gatt)
+                        doRefresh = false
+                    }
                     gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
@@ -556,7 +561,7 @@ class BluetoothLEService : Service() {
                         gattCallback,
                         BluetoothDevice.TRANSPORT_LE
                     )
-                if (doRefresh) refresh(gatt) // May be helpful when GATT discovery fails.
+                this.doRefresh = doRefresh
                 this@BluetoothLEService.gatt = gatt
                 return true
             } else {
