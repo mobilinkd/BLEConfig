@@ -7,6 +7,7 @@
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="select_device_fragment_label">Connect</string>
+    <string name="select_device_fragment_scanning_label">Scanning...</string>
     <string name="main_menu_fragment_label">Configure</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>

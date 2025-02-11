@@ -51,7 +51,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
     private val _blePermissionsOld = arrayOf(
         Manifest.permission.BLUETOOTH,
         Manifest.permission.BLUETOOTH_ADMIN,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_FINE_LOCATION,
     )
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -246,6 +246,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         if (scanning) {
             scanning = false
             bluetoothLeScanner.stopScan(leScanCallback)
+            (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_label)
             activity?.invalidateOptionsMenu()
             if (D) Log.d(TAG, "BLE scanning stopped")
         }
@@ -262,6 +263,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
             val scanSettings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             bluetoothLeScanner.startScan(mutableListOf(scanFilter), scanSettings, leScanCallback)
             if (D) Log.d(TAG, "BLE scanning started")
+            (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_scanning_label)
             requireActivity().invalidateOptionsMenu()
         }
     }
