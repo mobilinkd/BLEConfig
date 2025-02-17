@@ -246,6 +246,11 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         if (scanning) {
             scanning = false
             bluetoothLeScanner.stopScan(leScanCallback)
+            // Stopping scanning is an asynchronous process. Scanning interferes with BLE
+            // connection and service discovery. Wait to ensure scanning stops before
+            // continuing. Yes, this is a HACK. But it improves reliability of service
+            // discovery by a considerable margin.
+            Thread.sleep(500)
             (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_label)
             activity?.invalidateOptionsMenu()
             if (D) Log.d(TAG, "BLE scanning stopped")
@@ -260,6 +265,7 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
             }, SCAN_PERIOD)
             scanning = true
             val scanFilter = ScanFilter.Builder().setServiceUuid(ParcelUuid(TNC_SERVICE_UUID)).build()
+            // Low-latency scan is OK here since it only runs in the foreground.
             val scanSettings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
             bluetoothLeScanner.startScan(mutableListOf(scanFilter), scanSettings, leScanCallback)
             if (D) Log.d(TAG, "BLE scanning started")
