@@ -260,7 +260,8 @@ class BluetoothLEService : Service() {
      * Call the internal gatt.refresh() function to refresh the cached values for the BLE
      * device.
      *
-     * @param gatt is the gatt connection to the device which should be refreshed.
+     * @param gatt is the gatt connection to the device which should be refreshed. It must
+     *  be in an open & connected state for the refresh call to succeed.
      * @return true if the refresh was successful, otherwise false.
      */
     private fun refresh(gatt: BluetoothGatt): Boolean {
@@ -269,6 +270,10 @@ class BluetoothLEService : Service() {
             val refresh = gatt.javaClass.getMethod("refresh")
             isRefreshed = (refresh.invoke(gatt) as Boolean)
             Log.i(TAG,"Gatt cache refresh invoked for ${gatt.device.address} = $isRefreshed")
+            // The refresh() call completes asynchronously but has no callback. A short delay
+            // allows the call to complete -- usually. THis is a HACK, but it improves the odds
+            // of success considerably.
+            Thread.sleep(500)
         } catch (e: Exception) {
             Log.e(TAG, "Exception occurred while refreshing device: $e")
         }
@@ -299,6 +304,13 @@ class BluetoothLEService : Service() {
 
             if (D) Log.d(TAG, "Writing descriptor to enable notification")
 
+            // At this point, if a dual-mode device is not paired via BLE, an authorization or
+            // pairing request may be presented to the user. If the user accepts the pairing
+            // request, notification is enabled and the onWriteDescriptor callback is invoked.
+            // Otherwise the callback is not invoked, the connection is closed by the OS, and
+            // onConnectionStateChange is called. The TNC is left in an unbonded state.
+            // This pairing request does not happen for paired BLE-only devices.
+
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeDescriptor(
@@ -309,7 +321,6 @@ class BluetoothLEService : Service() {
                 descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                 gatt.writeDescriptor(descriptor)
             }
-
         }
     }
 
@@ -340,8 +351,11 @@ class BluetoothLEService : Service() {
                                         connectionState = ConnectionState.RETRYING
                                     }
                                     gatt.close()
-                                    connect(device!!, true)
-                                    retryCount = 0
+                                    // Refresh after one failed retry. A single retry is normal when
+                                    // establishing a new connection if the user is asked to pair
+                                    // the connection.
+                                    connect(device!!, retryCount == 1)
+                                    retryCount -= 1
                                     return
                                 }
                                 // This happens with dual-mode devices occasionally. The cache for the
@@ -358,9 +372,9 @@ class BluetoothLEService : Service() {
                                 }
                                 gatt.close()
                                 connect(device!!)
-                                retryCount = 0
+                                retryCount -= 1
                             } else {
-                                Log.e(TAG, "Authorization failed")
+                                Log.e(TAG, "Authorization failed; connectionState = $connectionState")
                                 connectionFailed("Authorization error")
                             }
                         }
@@ -385,7 +399,7 @@ class BluetoothLEService : Service() {
                     Log.w(TAG, "KISS TNC Service not found")
                     if (retryCount > 0) {
                         refresh(gatt)
-                        retryCount = 0
+                        retryCount -= 1
                         gatt.discoverServices()
                     } else {
                         discoveryFailed("KISS TNC Service not found")
@@ -425,12 +439,19 @@ class BluetoothLEService : Service() {
                     if (D) Log.e(TAG, "Invalid PDU")
                     // Retry INVALID_PDU failure once.
                     if (retryCount > 0) {
+                        retryCount -= 1
                         enableNotification(gatt)
+                        return
                     }
                 }
                 else -> {
                     // Should result in a disconnect...
                     Log.w(TAG,"Descriptor write failed, status = $status")
+                    if (retryCount > 0) {
+                        retryCount -= 1
+                        enableNotification(gatt)
+                        return
+                    }
                     connectionFailed("Descriptor write failed")
                 }
             }
@@ -596,20 +617,25 @@ class BluetoothLEService : Service() {
             return false
         }
 
-        when (device.type) {
-            BluetoothDevice.DEVICE_TYPE_CLASSIC -> {
-                if (D) Log.d(TAG, "${device.address} is a BT classic device")
-            }
-            BluetoothDevice.DEVICE_TYPE_LE -> {
-                if (D) Log.d(TAG, "${device.address} is a BLE device")
-            }
-            BluetoothDevice.DEVICE_TYPE_DUAL -> {
-                if (D) Log.d(TAG, "${device.address} is a dual-mode device")
-            }
-            BluetoothDevice.DEVICE_TYPE_UNKNOWN -> {
-                if (D) Log.d(TAG, "${device.address} is an unknown device type")
+        if (D) {
+            when (device.type) {
+                BluetoothDevice.DEVICE_TYPE_CLASSIC -> {
+                    Log.d(TAG, "${device.address} is a BT classic device")
+                }
+                BluetoothDevice.DEVICE_TYPE_LE -> {
+                    Log.d(TAG, "${device.address} is a BLE device")
+                }
+                BluetoothDevice.DEVICE_TYPE_DUAL -> {
+                    Log.d(TAG, "${device.address} is a dual-mode device")
+                }
+                BluetoothDevice.DEVICE_TYPE_UNKNOWN -> {
+                    Log.d(TAG, "${device.address} is an unknown device type")
+                }
             }
         }
+
+        // Debug logging of device service UUIDs removed because BLE GATT service UUIDs do
+        // not appear to ever be returned in device.uuids. These are BT classic UUIDs only.
 
         synchronized(connectionState) {
             when (connectionState) {
