@@ -39,7 +39,15 @@ local.properties
 .idea/modules.xml
 # Comment next line if keeping position of elements in Navigation Editor is relevant for you
 .idea/navEditor.xml
+.idea/AndroidProjectSystem.xml
+.idea/appInsightsSettings.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/markdown.xml
+.idea/studiobot.xml
+.idea/deploymentTargetSelector.xml
 
 # Gradle files
 .gradle
 
+# Tools & Plugins
+.ollamassist/
