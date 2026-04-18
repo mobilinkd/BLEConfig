@@ -12,8 +12,10 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +35,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat.invalidateOptionsMenu
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.registerReceiver
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -44,7 +47,18 @@ import java.util.UUID
 
 
 /**
- * A simple [Fragment] subclass as the default destination in the navigation.
+ * In an ideal world, we would ask the BluetoothAdapter for a list of devices and filter
+ * the list to those with a BLE KISS TNC service UUID. However, Android only caches BT
+ * classic UUIDs with the device, even for BLE-only devices.
+ *
+ * The option here is to either display all devices and allow the user to choose any of
+ * them, or to scan for BLE devices and filter the list to just the devices which have
+ * the KISS TNC service UUID. The downside of scanning is that it can interfere with later
+ * connection setup and discovery. For now (Android 15) there is no way to detect that
+ * scanning has stopped. stopScan() is an asynchronous operation with no callback.
+ *
+ * For a better user experience, the choice was made to scan and filter the devices to
+ * just KISS TNCs. We then wait a short period for the scan to finish.
  */
 class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceListener {
 
@@ -67,11 +81,59 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
     private lateinit var bluetoothAdapter : BluetoothAdapter
     private lateinit var bluetoothLeScanner : BluetoothLeScanner
     private lateinit var leDeviceListAdapter: LeDeviceListAdapter
+    private val handler: Handler = object : Handler(Looper.getMainLooper()) {}
+    private var waitingForSelection = false
     private var actionBar: ActionBar? = null
+    private var bondingDevice: BluetoothDevice? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+
+    private fun makeBleIntentFilter(): IntentFilter {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        return intentFilter
+    }
+
+    private val bleReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            bondingDevice?.let { bondingDevice ->
+                when (intent.action) {
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                        val intentDevice =
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE) as BluetoothDevice?
+                        val newState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
+                        intentDevice?.let { device ->
+                            if (device.address == bondingDevice.address) {
+                                this@SelectDeviceFragment.bondingDevice = null
+                                when (newState) {
+                                    BluetoothDevice.BOND_BONDED -> {
+                                        handler.postDelayed({
+                                            findNavController().navigate(
+                                                R.id.action_SelectDeviceFragment_to_ConnectingFragment,
+                                                bundleOf(
+                                                    ConnectingFragment.ARG_DEVICE to bondingDevice,
+                                                    ConnectingFragment.ARG_SOURCE to R.id.SelectDeviceFragment
+                                                )
+                                            )
+                                        }, 2000)
+                                    }
+                                    BluetoothDevice.BOND_NONE -> {
+                                        Log.w(TAG, "User chose not to bond TNC")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else -> {
+
+                    }
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,23 +195,35 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         bluetoothManager = _context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
+//        context?.registerReceiver(bleReceiver, makeBleIntentFilter())
     }
 
+    @SuppressLint("MissingPermission")
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume() ->  ${this@SelectDeviceFragment.activity?.intent?.action}")
         (activity as MainActivity).tncViewModel.clear()
+        leDeviceListAdapter.clear()
         (activity as MainActivity).setAlpha(1.0f)
         (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_label)
         (activity as MainActivity).close()
+//        bluetoothAdapter.bondedDevices.forEach { device ->
+//            leDeviceListAdapter.addDevice(device)
+//        }
         actionBar = activity?.getActionBar()
-        scanForTNCs()
+        waitingForSelection = true
+        if (bondingDevice == null) scanForTNCs()
     }
 
     override fun onPause() {
         super.onPause()
         if (D) Log.d(TAG, "onPause()")
         stopScanning()
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+//        context?.unregisterReceiver(bleReceiver)
     }
 
     override fun onDestroyView() {
@@ -230,8 +304,8 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
             super.onScanResult(callbackType, result)
             // Only show bonded devices.
             if (result.device.bondState != BluetoothDevice.BOND_BONDED) {
-                if (D) Log.d(TAG, "Ignoring ${result.device.address}; not bonded")
-                return
+//                if (D) Log.d(TAG, "Ignoring ${result.device.address}; not bonded")
+//                return
             }
             if (leDeviceListAdapter.size() == 0) {
                 (activity as MainActivity?)?.setAlpha(0.25f)
@@ -246,11 +320,6 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
         if (scanning) {
             scanning = false
             bluetoothLeScanner.stopScan(leScanCallback)
-            // Stopping scanning is an asynchronous process. Scanning interferes with BLE
-            // connection and service discovery. Wait to ensure scanning stops before
-            // continuing. Yes, this is a HACK. But it improves reliability of service
-            // discovery by a considerable margin.
-            Thread.sleep(500)
             (activity as MainActivity).setFragmentDescription(R.string.select_device_fragment_label)
             activity?.invalidateOptionsMenu()
             if (D) Log.d(TAG, "BLE scanning stopped")
@@ -276,12 +345,24 @@ class SelectDeviceFragment : Fragment(),  LeDeviceListAdapter.BluetoothLEDeviceL
 
     @SuppressLint("MissingPermission")
     override fun onBluetoothLEDeviceSelected(device: BluetoothDevice) {
-        stopScanning()
-        findNavController().navigate(
-            R.id.action_SelectDeviceFragment_to_ConnectingFragment,
-            bundleOf(
-                ConnectingFragment.ARG_DEVICE to device,
-                ConnectingFragment.ARG_SOURCE to R.id.SelectDeviceFragment))
+        if (waitingForSelection) {
+            waitingForSelection = false
+            stopScanning()
+//            if (device.bondState != BluetoothDevice.BOND_BONDED) {
+//                bondingDevice = device
+//                handler.postDelayed({device.createBond()}, 10)
+//            } else {
+                handler.postDelayed({
+                    findNavController().navigate(
+                        R.id.action_SelectDeviceFragment_to_ConnectingFragment,
+                        bundleOf(
+                            ConnectingFragment.ARG_DEVICE to device,
+                            ConnectingFragment.ARG_SOURCE to R.id.SelectDeviceFragment
+                        )
+                    )
+                }, 500)
+//            }
+        }
     }
 
     companion object {

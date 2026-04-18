@@ -375,6 +375,7 @@ class BluetoothLEService : Service() {
                                 retryCount -= 1
                             } else {
                                 Log.e(TAG, "Authorization failed; connectionState = $connectionState")
+                                gatt.close()
                                 connectionFailed("Authorization error")
                             }
                         }
@@ -610,12 +611,12 @@ class BluetoothLEService : Service() {
     fun open(device: BluetoothDevice): Boolean {
         if (D) Log.d(TAG, "open(device = ${device.address})")
 
-        if (device.bondState != BluetoothDevice.BOND_BONDED) {
-            Log.e(TAG, "open(): device is not bonded")
-            close()
-            connectionFailed("TNC is not paired")
-            return false
-        }
+//        if (device.bondState != BluetoothDevice.BOND_BONDED) {
+//            Log.e(TAG, "open(): device is not bonded")
+//            close()
+//            connectionFailed("TNC is not paired")
+//            return false
+//        }
 
         if (D) {
             when (device.type) {
@@ -682,7 +683,7 @@ class BluetoothLEService : Service() {
     }
 
     fun close(gatt: BluetoothGatt? = this.gatt) {
-        if (D) Log.d(TAG, "close()")
+        if (D) Log.d(TAG, "close(), connectionState = $connectionState")
         val start = System.currentTimeMillis()
         while (connectionState == ConnectionState.DISCONNECTING) {
             Thread.sleep(100)
@@ -783,7 +784,7 @@ class BluetoothLEService : Service() {
     }
 
     companion object {
-        private const val D = false
+        private const val D = true
         private val TAG = BluetoothLEService::class.java.simpleName
 
         fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }

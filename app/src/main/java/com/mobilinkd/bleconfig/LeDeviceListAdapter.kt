@@ -16,9 +16,17 @@ import com.mobilinkd.bleconfig.databinding.LeDeviceCardViewBinding
 
 class LeDeviceListAdapter(context: Context) : RecyclerView.Adapter<LeDeviceListAdapter.ViewHolder>() {
 
+    inner class MyScanResult internal constructor(device: BluetoothDevice, rssi: Int) {
+        val _device: BluetoothDevice = device
+        val _rssi: Int = rssi
+
+        val device: BluetoothDevice get() = _device
+        val rssi: Int get() = _rssi
+    }
+
     private lateinit var _binding: LeDeviceCardViewBinding
     private var _inflater = LayoutInflater.from(context)
-    private var _data = mutableListOf<ScanResult>()
+    private var _data = mutableListOf<MyScanResult>()
     private var _clickListener: BluetoothLEDeviceListener? = null
 
     // stores and recycles views as they are scrolled off screen
@@ -68,6 +76,12 @@ class LeDeviceListAdapter(context: Context) : RecyclerView.Adapter<LeDeviceListA
         this._clickListener = itemClickListener
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun clear() {
+        _data.clear()
+        notifyDataSetChanged()
+    }
+
     // parent activity will implement this method to respond to click events
     interface BluetoothLEDeviceListener {
         fun onBluetoothLEDeviceSelected(device: BluetoothDevice)
@@ -75,30 +89,57 @@ class LeDeviceListAdapter(context: Context) : RecyclerView.Adapter<LeDeviceListA
 
     @SuppressLint("MissingPermission")
     fun addDevice(scanResult: ScanResult) {
-        if (scanResult.device.bondState != BluetoothDevice.BOND_BONDED) {
+//        if (scanResult.device.bondState != BluetoothDevice.BOND_BONDED) {
 //            if (D) Log.d(TAG,"Ignoring unbonded device: ${scanResult.device.address}")
 //            return
-        }
+//        }
 
         if (scanResult.device.name == null) {
             // Ignore partial results.
+            if (D) Log.d(TAG,"${scanResult.device.address} name is null; ignored.")
             return
         }
 
         for ((index, item) in _data.withIndex()) {
             if (item.device.address == scanResult.device.address) {
-                _data[index] = scanResult
+                _data[index] = MyScanResult(scanResult.device, scanResult.rssi)
                 notifyItemChanged(index)
                 return
             }
         }
         val position = _data.size
-        _data += scanResult
+        _data += MyScanResult(scanResult.device, scanResult.rssi)
         notifyItemInserted(position)
         if (D) Log.d(TAG, "Added scan result for ${scanResult.device.address} at position $position")
     }
 
-    fun getItem(id: Int): ScanResult {
+
+    @SuppressLint("MissingPermission")
+    fun addDevice(device: BluetoothDevice) {
+        if (device.bondState != BluetoothDevice.BOND_BONDED) {
+            if (D) Log.d(TAG,"Ignoring unbonded device: ${device.address}")
+            return
+        }
+
+        if (device.name == null) {
+            // Ignore partial results.
+            if (D) Log.d(TAG,"${device.address} name is null; ignored.")
+            return
+        }
+
+        val position = _data.size
+        _data += MyScanResult(device, -99)
+        notifyItemInserted(position)
+        if (D) {
+            Log.d(TAG, "Added scan result for ${device.name}:${device.address} at position $position")
+            device.uuids?.forEach { uuid ->
+                Log.d(TAG, "has service UUID: $uuid")
+            }
+        }
+    }
+
+
+    fun getItem(id: Int): MyScanResult {
         return _data[id]
     }
 
